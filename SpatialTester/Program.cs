@@ -21,6 +21,7 @@ namespace SpatialTester
             uint nrEntries = 100;
 
             //Console.WriteLine(ExtGetEnteredSize());
+            Console.ReadLine();
             IntPtr intPtr = Marshal.AllocHGlobal((int)(20 * nrEntries));
             //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
 

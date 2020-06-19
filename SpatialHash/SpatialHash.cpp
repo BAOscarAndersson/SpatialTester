@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SpatialHash.h"
 
 extern "C" __declspec(dllexport) uint32_t Start(uint32_t nrEntries, Entered * inEntries);

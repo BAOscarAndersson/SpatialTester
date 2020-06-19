@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpatialTester", "SpatialTester\SpatialTester.csproj", "{3F659952-08A5-419E-AB16-27F5DAE4E83C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0D59173B-0AF8-466E-B395-8C14482E8BA1} = {0D59173B-0AF8-466E-B395-8C14482E8BA1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpatialHash", "SpatialHash\SpatialHash.vcxproj", "{0D59173B-0AF8-466E-B395-8C14482E8BA1}"
 EndProject
@@ -29,7 +32,8 @@ Global
 		{3F659952-08A5-419E-AB16-27F5DAE4E83C}.Release|x64.Build.0 = Release|Any CPU
 		{3F659952-08A5-419E-AB16-27F5DAE4E83C}.Release|x86.ActiveCfg = Release|Any CPU
 		{3F659952-08A5-419E-AB16-27F5DAE4E83C}.Release|x86.Build.0 = Release|Any CPU
-		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|Any CPU.Build.0 = Debug|x64
 		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|x64.ActiveCfg = Debug|x64
 		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|x64.Build.0 = Debug|x64
 		{0D59173B-0AF8-466E-B395-8C14482E8BA1}.Debug|x86.ActiveCfg = Debug|Win32

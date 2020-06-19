@@ -45,7 +45,7 @@ struct Entered
     uint32_t nrInCell;
     uint32_t hashValue;
 
-    Entered(Entry inEntry, uint32_t inNrInCell, uint32_t inHashValue) : entry(inEntry), nrInCell(inNrInCell) {}
+    Entered(Entry inEntry, uint32_t inNrInCell, uint32_t inHashValue) : entry(inEntry), nrInCell(inNrInCell), hashValue(inHashValue) {}
     Entered() : entry(), nrInCell(0), hashValue(0) {}
     ~Entered() {}
 };

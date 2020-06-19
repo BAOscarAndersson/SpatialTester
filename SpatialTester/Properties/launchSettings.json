@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SpatialTester": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
