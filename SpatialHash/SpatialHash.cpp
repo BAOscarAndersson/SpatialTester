@@ -177,11 +177,11 @@ vector<EntryWithDistance>* SpatialHash::GetCloseEntries(const Position pos, cons
             /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
              * a small number of elements in this list so using Insert Sort probably makes sense.
              * This should be tested sometime though. */
-            for (int32_t h = 1; h < returnEntries->size(); h++)
+            for (int32_t h = 1; h < static_cast<int32_t>(returnEntries->size()); h++)
             {
                 EntryWithDistance tempEntry = returnEntries->at(h);
 
-                size_t k = h - 1;
+                int32_t k = h - 1;
                 while (k >= 0 && returnEntries->at(k).distance > tempEntry.distance)
                 {
                     returnEntries->at(k + 1) = returnEntries->at(k);
@@ -325,17 +325,16 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
         int32_t* data = new int32_t[nrEntries];
         for (int32_t i = 0; i < nrEntries; i++)
         {
-            Position tempPos(rnd_float(rng), rnd_float(rng));
+            Position tempPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
             Entry aEntry = Entry{ rnd_int(rng), tempPos };
             globalEntries[i] = { aEntry, 0, 0 };
             data[i] = rnd_int(rng);
         }
 
         spatialHash = new SpatialHash(tableSize);
-
         spatialHash->Initilize(globalEntries, nrEntries);
 
-        Position testPos(rnd_float(rng), rnd_float(rng));
+        Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
         //Position testPos(63.0f, 63.0f);
 
         vector<EntryWithDistance>* closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
@@ -354,7 +353,6 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
         cout << "\n\n\n";
 
         delete[] data;
-        cout << "Start6" << '\n';
     }
 
     return 0;

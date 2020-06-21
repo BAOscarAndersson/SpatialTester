@@ -21,20 +21,15 @@ namespace SpatialTester
             uint nrEntries = 100;
 
             //Console.WriteLine(ExtGetEnteredSize());
-            Console.ReadLine();
+
             IntPtr intPtr = Marshal.AllocHGlobal((int)(20 * nrEntries));
             //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
 
             uint didItRun = Start(nrEntries, intPtr);
-            Console.WriteLine("Did it run? (zero is yes): " + didItRun);
-
 
             uint didItStop = Stop();
-            Console.WriteLine("Did it stop? (zero is yes): " + didItStop);
-
 
             Marshal.FreeHGlobal(intPtr);
-            Console.WriteLine("Deallocated the array");
 
             Console.ReadLine();
         }
