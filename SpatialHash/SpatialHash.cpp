@@ -4,6 +4,7 @@
 extern "C" __declspec(dllexport) uint32_t Start(uint32_t nrEntries, Entered * inEntries);
 extern "C" __declspec(dllexport) uint32_t Stop();
 extern "C" __declspec(dllexport) uint32_t ExtGetEnteredSize();
+extern "C" __declspec(dllexport) void* ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
 
 using namespace std;
 
@@ -177,7 +178,7 @@ vector<EntryWithDistance>* SpatialHash::GetCloseEntries(const Position pos, cons
             /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
              * a small number of elements in this list so using Insert Sort probably makes sense.
              * This should be tested sometime though. */
-            for (int32_t h = 1; h < static_cast<int32_t>(returnEntries->size()); h++)
+            for (int32_t h = 1; h < static_cast<int>(returnEntries->size()); h++)
             {
                 EntryWithDistance tempEntry = returnEntries->at(h);
 
@@ -364,7 +365,6 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
 /// <returns>0 if it ran to completion.</returns>
 uint32_t Stop()
 {
-
     delete spatialHash;
 
     return 0;
@@ -373,4 +373,9 @@ uint32_t Stop()
 uint32_t ExtGetEnteredSize()
 {
     return spatialHash->GetEnteredSize();
+}
+
+void* ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities)
+{
+    return spatialHash->GetCloseEntries(position, d, maxEntities);
 }

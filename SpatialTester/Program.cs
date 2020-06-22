@@ -18,48 +18,67 @@ namespace SpatialTester
 
         static void Main(string[] args)
         {
+
             uint nrEntries = 100;
+
+            Random rand = new Random();
+
+            //rand.Next(100, 999);
+            //(float)rand.NextDouble() * 5 + 500;
 
             //Console.WriteLine(ExtGetEnteredSize());
 
             IntPtr intPtr = Marshal.AllocHGlobal((int)(20 * nrEntries));
             //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
 
-            uint didItRun = Start(nrEntries, intPtr);
+            try
+            {
+                uint didItRun = Start(nrEntries, intPtr);
 
-            uint didItStop = Stop();
-
-            Marshal.FreeHGlobal(intPtr);
+                uint didItStop = Stop();
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(intPtr);
+            }
 
             Console.ReadLine();
         }
     }
 
-    //[StructLayout(LayoutKind.Sequential)]
-    //public struct Position
-    //{
-    //    public float x;
-    //    public float y;
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Position
+    {
+        public float x;
+        public float y;
 
-    //    public Position(uint inX, uint inY)
-    //    {
-    //        x = inX;
-    //        y = inY;
-    //    }
-    //}
+        public Position(uint inX, uint inY)
+        {
+            x = inX;
+            y = inY;
+        }
+    }
 
-    //[StructLayout(LayoutKind.Sequential)]
-    //public struct Entry
-    //{
-    //    public uint id;
-    //    public Position position;
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Entry
+    {
+        public uint id;
+        public Position position;
 
-    //    public Entry(uint inId, Position inPos)
-    //    {
-    //        id = inId;
-    //        position = inPos;
-    //    }
-    //}
+        public Entry(uint inId, Position inPos)
+        {
+            id = inId;
+            position = inPos;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct EntryWithDistance
+    {
+        Entry entry;
+        float distance;
+    };
+
 
     //[StructLayout(LayoutKind.Sequential)]
     //public struct EntryWithDistance
