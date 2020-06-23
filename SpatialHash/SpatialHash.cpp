@@ -329,7 +329,6 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
             Position tempPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
             Entry aEntry = Entry{ rnd_int(rng), tempPos };
             globalEntries[i] = { aEntry, 0, 0 };
-            data[i] = rnd_int(rng);
         }
 
         spatialHash = new SpatialHash(tableSize);
@@ -352,8 +351,6 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
         }
         cout << "closeEntries END";
         cout << "\n\n\n";
-
-        delete[] data;
     }
 
     return 0;
