@@ -4,7 +4,7 @@
 extern "C" __declspec(dllexport) uint32_t Start(uint32_t nrEntries, Entered * inEntries);
 extern "C" __declspec(dllexport) uint32_t Stop();
 extern "C" __declspec(dllexport) uint32_t ExtGetEnteredSize();
-extern "C" __declspec(dllexport) void* ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
+extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
 
 using namespace std;
 
@@ -65,8 +65,8 @@ SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength
         table->at(i).offsets->reserve(100);
     }
     InitializeOffsets();
-    returnEntries = new vector<EntryWithDistance>();
-    returnEntries->reserve(100);
+    closeEntries = new vector<EntryWithDistance>();
+    closeEntries->reserve(100);
 }
 
 SpatialHash::~SpatialHash()
@@ -79,7 +79,7 @@ SpatialHash::~SpatialHash()
 
     delete table;
 
-    delete returnEntries;
+    delete closeEntries;
 }
 
 /// <summary>
@@ -135,10 +135,10 @@ void SpatialHash::Remove(Entered* entry)
 /// <param name="d">The radius of the search area.</param>
 /// <param name="maxEntities">The max number of entities to return.</param>
 /// <returns>Entities within the search area.</returns>
-vector<EntryWithDistance>* SpatialHash::GetCloseEntries(const Position pos, const float d, const unsigned short int maxEntities)
+CloseEntriesAndNrOf SpatialHash::GetCloseEntries(const Position pos, const float d, const unsigned short int maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
-    returnEntries->clear();
+    closeEntries->clear();
 
     // This is the cell that will be the origo of the search.
     uint32_t cellNr = CalculateCellNr(pos);
@@ -171,42 +171,42 @@ vector<EntryWithDistance>* SpatialHash::GetCloseEntries(const Position pos, cons
                  * of the hashing/modulo on insertion. */
                 if (tempEntry.distance < d)
                 {
-                    returnEntries->push_back(tempEntry);
+                    closeEntries->push_back(tempEntry);
                 }
             }
 
             /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
              * a small number of elements in this list so using Insert Sort probably makes sense.
              * This should be tested sometime though. */
-            for (int32_t h = 1; h < static_cast<int>(returnEntries->size()); h++)
+            for (int32_t h = 1; h < static_cast<int>(closeEntries->size()); h++)
             {
-                EntryWithDistance tempEntry = returnEntries->at(h);
+                EntryWithDistance tempEntry = closeEntries->at(h);
 
                 int32_t k = h - 1;
-                while (k >= 0 && returnEntries->at(k).distance > tempEntry.distance)
+                while (k >= 0 && closeEntries->at(k).distance > tempEntry.distance)
                 {
-                    returnEntries->at(k + 1) = returnEntries->at(k);
+                    closeEntries->at(k + 1) = closeEntries->at(k);
                     k--;
                 }
 
-                returnEntries->at(k + 1) = tempEntry;
+                closeEntries->at(k + 1) = tempEntry;
             }
 
             j++;
         }
 
         // Returns a max number for easier interop, but might make sense to spend the effort to return a dynamic array?
-        if (returnEntries->size() >= maxEntities)
+        if (closeEntries->size() >= maxEntities)
         {
-            returnEntries->resize(maxEntities);
-            return returnEntries;
+            closeEntries->resize(maxEntities);
+            return CloseEntriesAndNrOf{ static_cast<uint32_t>(closeEntries->size()), closeEntries->data() };
         }
 
         i++;
 
     } while (i < stepSizes.size());
 
-    return returnEntries;
+    return CloseEntriesAndNrOf{ static_cast<uint32_t>(closeEntries->size()), closeEntries->data() };
 }
 
 uint32_t SpatialHash::GetEnteredSize()
@@ -338,15 +338,15 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
         Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
         //Position testPos(63.0f, 63.0f);
 
-        vector<EntryWithDistance>* closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
+        CloseEntriesAndNrOf closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
 
         cout << "closeEntries\n";
-        for (uint32_t i = 0; i != closeEntries->size(); i++)
+        for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
         {
-            cout << setw(7) << closeEntries->at(i).entry.id << ' ';
-            cout << setw(7) << static_cast<int>(closeEntries->at(i).entry.position.x) % tableSize << ' ';
-            cout << setw(7) << static_cast<int>(closeEntries->at(i).entry.position.y) % tableSize << ' ';
-            cout << std::fixed << std::setprecision(3) << closeEntries->at(i).distance << ' ';
+            cout << setw(7) << closeEntries.allCloseEntries[i].entry.id << ' ';
+            cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) % tableSize << ' ';
+            cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) % tableSize << ' ';
+            cout << std::fixed << std::setprecision(3) << closeEntries.allCloseEntries[i].distance << ' ';
 
             cout << '\n';
         }
@@ -375,7 +375,7 @@ uint32_t ExtGetEnteredSize()
     return spatialHash->GetEnteredSize();
 }
 
-void* ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities)
+CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
 }

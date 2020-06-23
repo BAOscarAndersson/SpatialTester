@@ -66,6 +66,16 @@ struct EntryWithDistance
 };
 
 /// <summary>
+/// GetCloseEntries returns this because it creates a array of EntryWithDistance but 
+/// also needs to return how many elements there is in the array.
+/// </summary>
+struct CloseEntriesAndNrOf
+{
+    uint32_t nrOfEntries;
+    EntryWithDistance* allCloseEntries;
+};
+
+/// <summary>
 /// A Spatial Hash consists of these Cells
 /// In localEntries all Entry:s that are inside of the cell in the sense of the hash-algorithm are stored.
 /// The offsets contains pointers to Cells that are close to this one, precalculated for faster lookup. 
@@ -116,7 +126,7 @@ public:
     /// <param name="d">Radius of the search area.</param>
     /// <param name="maxEntities">No more than this number of entires will be returned.</param>
     /// <returns>Pointer to a list of entrise sorted by distance from input position.</returns>
-    std::vector<EntryWithDistance>* GetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
+    CloseEntriesAndNrOf GetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
 
     /// <summary>
     /// The size in bytes of the elements of allEntries. This is so that which manages allEntries can
@@ -151,7 +161,7 @@ private:
     const int32_t yMask;
 
     // Sorted list of entries to return from GetCloseEntities().
-    std::vector<EntryWithDistance>* returnEntries;
+    std::vector<EntryWithDistance>* closeEntries;
 
     // Inserts a entry from *allEntries into the hash table.
     void InsertInTable(Entered* entry);
