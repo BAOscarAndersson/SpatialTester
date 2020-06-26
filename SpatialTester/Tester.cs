@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace SpatialTester
         {
             Tester tester = new Tester();
 
-            uint nrEntries = 100;
+            uint nrEntries = 10;
             int enteredSize = 20;
             //Console.WriteLine(ExtGetEnteredSize());
 
@@ -50,18 +51,28 @@ namespace SpatialTester
             //rand.Next(100, 999);
             //(float)rand.NextDouble() * 5 + 500;
 
-
+            Console.WriteLine("C# gives:");
             for (int i = 0; i <= nrEntries; i++)
             {
-                float x = (float)rand.NextDouble() * 5 + 500;
-                float y = (float)rand.NextDouble() * 5 + 500;
+                float x = (float)rand.NextDouble() * 500;
+                float y = (float)rand.NextDouble() * 500;
                 uint id = (uint)rand.Next(100, 999);
 
-                Marshal.WriteInt32(entries, i * enteredSize, (int)x);
-                Marshal.WriteInt32(entries, i * enteredSize, (int)y);
-                Marshal.WriteInt32(entries, i * enteredSize, (int)id);
-                Marshal.WriteInt32(entries, i * enteredSize, 0);
-                Marshal.WriteInt32(entries, i * enteredSize, 0);
+                Console.WriteLine("id:" + id + ", x: " + x + ", y: " + y);
+
+                Marshal.WriteInt32(entries, i * enteredSize + 0 * 4, (int)id);
+                for (int j = 0; j < 4; j++)
+                {
+                    byte[] xBytes = BitConverter.GetBytes(x);
+                    Marshal.WriteByte(entries, i * enteredSize + 1*4 + j, xBytes[j]);
+                }
+                for (int j = 0; j < 4; j++)
+                {
+                    byte[] yBytes = BitConverter.GetBytes(y);
+                    Marshal.WriteByte(entries, i * enteredSize + 2*4 + j, yBytes[j]);
+                }
+                Marshal.WriteInt32(entries, i * enteredSize + 3 * 4, 100110);
+                Marshal.WriteInt32(entries, i * enteredSize + 4 * 4, 7999);
             }
         }
     }

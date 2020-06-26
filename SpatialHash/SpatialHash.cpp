@@ -323,12 +323,11 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
     for (int32_t g = 0; g < 1; g++)
     {
         globalEntries = inEntries;
-        int32_t* data = new int32_t[nrEntries];
+        //int32_t* data = new int32_t[nrEntries];
+        cout << '\n' << "C++ reads:" << '\n';
         for (int32_t i = 0; i < nrEntries; i++)
         {
-            Position tempPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
-            Entry aEntry = Entry{ rnd_int(rng), tempPos };
-            globalEntries[i] = { aEntry, 0, 0 };
+            cout << "id:" << globalEntries[i].entry.id << ", x:" << globalEntries[i].entry.position.x << ", y:" << globalEntries[i].entry.position.y << '\n';
         }
 
         spatialHash = new SpatialHash(tableSize);
