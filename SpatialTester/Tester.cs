@@ -21,13 +21,13 @@ namespace SpatialTester
             Tester tester = new Tester();
 
             uint nrEntries = 100;
-
+            int enteredSize = 20;
             //Console.WriteLine(ExtGetEnteredSize());
 
-            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(20 * nrEntries));
+            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * nrEntries));
             //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
 
-            tester.FillEntries(GlobalEntries, nrEntries);
+            tester.FillEntries(GlobalEntries, nrEntries, enteredSize);
 
             try
             {
@@ -43,24 +43,26 @@ namespace SpatialTester
             Console.ReadLine();
         }
 
-        void FillEntries(IntPtr entries, uint nrEntries)
+        void FillEntries(IntPtr entries, uint nrEntries, int enteredSize)
         {
             Random rand = new Random();
 
             //rand.Next(100, 999);
             //(float)rand.NextDouble() * 5 + 500;
 
-            Entered[] entered = new Entered[nrEntries];
 
-            for (uint i = 0; i <= nrEntries; i++)
+            for (int i = 0; i <= nrEntries; i++)
             {
-                Position tempPos = new Position() { x = (float)rand.NextDouble() * 5 + 500, y = (float)rand.NextDouble() * 5 + 500};
-                Entry aEntry = new Entry() { id = (uint)rand.Next(100, 999), position = tempPos };
-                Entered aEntered = new Entered() { entry = aEntry, nrInCell = 0, hashValue = 0 };
-                entered[i] = aEntered;
-            }
+                float x = (float)rand.NextDouble() * 5 + 500;
+                float y = (float)rand.NextDouble() * 5 + 500;
+                uint id = (uint)rand.Next(100, 999);
 
-            Marshal.Copy(entered, 0, entries, nrEntries);
+                Marshal.WriteInt32(entries, i * enteredSize, (int)x);
+                Marshal.WriteInt32(entries, i * enteredSize, (int)y);
+                Marshal.WriteInt32(entries, i * enteredSize, (int)id);
+                Marshal.WriteInt32(entries, i * enteredSize, 0);
+                Marshal.WriteInt32(entries, i * enteredSize, 0);
+            }
         }
     }
 
