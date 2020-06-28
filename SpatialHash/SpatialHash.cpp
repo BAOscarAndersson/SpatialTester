@@ -3,7 +3,6 @@
 
 extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) uint32_t ExtGetEnteredSize(SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
 
 using namespace std;
@@ -11,11 +10,6 @@ using namespace std;
 // Temporary values that will probably be determined at runtime later.
 constexpr uint32_t tableSize = 4;                // Needs to be 2^n.
 constexpr uint32_t reservedLocalEntries = 8;
-
-// Temporary living space for GlobalEntries who should live in C# later on.
-// spatialHash might have to live here forever.
-//SpatialHash* spatialHash;
-//Entered* globalEntries;
 
 /* All these vectors are just for development.  They describe which cells of the spatialHash table needs to
 be searched to get the closests neighbours, the different steps is for different search radii.
@@ -40,17 +34,26 @@ vector<int32_t> yOffsetsToCalculate{};
 // the GetCloseEntries will be looped through in steps of these sizes.
 vector<size_t> stepSizes = { xStep1.size(), xStep2.size(), xStep3.size(), xStep4.size() };
 
-// Proper modulo function.
+/// <summary>
+/// Proper modulo function.
+/// </summary>
 int ProperMod(const uint32_t a, const int b)
 {
     return (a < 0 ? (((a % b) + b) % b) : (a % b));
 }
 
+/// <summary>
+/// Euclidian distance.
+/// </summary>
 float Distance(const Position a, const Position b)
 {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
+/// <summary>
+/// Creates a Spatial Hash of a certain size.
+/// </summary>
+/// <param name="sideLength">The size of the Spatial Hash, needs to be a power of two.</param>
 SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength(sideLength), xMask(sideLength - 1), yMask(sideLength - 1)
 {
     // table represents a two dimensional square.
@@ -362,11 +365,6 @@ uint32_t Stop(SpatialHash* spatialHash)
     delete spatialHash;
 
     return 0;
-}
-
-uint32_t ExtGetEnteredSize(SpatialHash* spatialHash)
-{
-    return spatialHash->GetEnteredSize();
 }
 
 CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)

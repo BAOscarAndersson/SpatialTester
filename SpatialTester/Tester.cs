@@ -15,7 +15,7 @@ namespace SpatialTester
         public static extern uint Stop(IntPtr spatialHash);
 
         [DllImport("SpatialHash.dll")]
-        public static extern uint ExtGetEnteredSize(IntPtr spatialHash);
+        public static extern CloseEntriesAndNrOf ExtGetCloseEntries(Position position, float d, uint maxEntities, IntPtr spatialHash);
 
         static void Main(string[] args)
         {
@@ -23,7 +23,6 @@ namespace SpatialTester
 
             uint nrEntries = 10;
             int enteredSize = 20;
-            //Console.WriteLine(ExtGetEnteredSize());
 
             IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * nrEntries));
             //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
@@ -106,12 +105,10 @@ namespace SpatialTester
         public float distance;
     };
 
-
-    //[StructLayout(LayoutKind.Sequential)]
-    //public struct EntryWithDistance
-    //{
-    //    public Entry entry;
-    //    public float distance;
-    //}
+    struct CloseEntriesAndNrOf
+    {
+        public uint nrOfEntries;
+        IntPtr allCloseEntries;
+    };
 }
 
