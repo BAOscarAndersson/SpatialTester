@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "SpatialHash.h"
 
-extern "C" __declspec(dllexport) uint32_t Start(uint32_t nrEntries, Entered * inEntries);
-extern "C" __declspec(dllexport) uint32_t Stop();
-extern "C" __declspec(dllexport) uint32_t ExtGetEnteredSize();
-extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
+extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries);
+extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) uint32_t ExtGetEnteredSize(SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
 
 using namespace std;
 
@@ -14,7 +14,7 @@ constexpr uint32_t reservedLocalEntries = 8;
 
 // Temporary living space for GlobalEntries who should live in C# later on.
 // spatialHash might have to live here forever.
-SpatialHash* spatialHash;
+//SpatialHash* spatialHash;
 Entered* globalEntries;
 
 /* All these vectors are just for development.  They describe which cells of the spatialHash table needs to
@@ -301,7 +301,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// Right now a lot of stuff for testing.
 /// </summary>
 /// <returns>A 0 if it ran to the end.</returns>
-uint32_t Start(uint32_t nrEntries, Entered* inEntries)
+void* Start(uint32_t nrEntries, Entered* inEntries)
 {
     mt19937 rng{ random_device()() };
     uniform_real_distribution<float> rnd_float(900, 1000);
@@ -320,58 +320,56 @@ uint32_t Start(uint32_t nrEntries, Entered* inEntries)
     yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep3.begin(), yStep3.end());
     yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
 
-    for (int32_t g = 0; g < 1; g++)
+
+    globalEntries = inEntries;
+    //int32_t* data = new int32_t[nrEntries];
+    cout << '\n' << "C++ reads:" << '\n';
+    for (int32_t i = 0; i < nrEntries; i++)
     {
-        globalEntries = inEntries;
-        //int32_t* data = new int32_t[nrEntries];
-        cout << '\n' << "C++ reads:" << '\n';
-        for (int32_t i = 0; i < nrEntries; i++)
-        {
-            cout << "id:" << globalEntries[i].entry.id << ", x:" << globalEntries[i].entry.position.x << ", y:" << globalEntries[i].entry.position.y << '\n';
-        }
-
-        spatialHash = new SpatialHash(tableSize);
-        spatialHash->Initilize(globalEntries, nrEntries);
-
-        Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
-        //Position testPos(63.0f, 63.0f);
-
-        CloseEntriesAndNrOf closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
-
-        cout << "closeEntries\n";
-        for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
-        {
-            cout << setw(7) << closeEntries.allCloseEntries[i].entry.id << ' ';
-            cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) % tableSize << ' ';
-            cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) % tableSize << ' ';
-            cout << std::fixed << std::setprecision(3) << closeEntries.allCloseEntries[i].distance << ' ';
-
-            cout << '\n';
-        }
-        cout << "closeEntries END";
-        cout << "\n\n\n";
+        cout << "id:" << globalEntries[i].entry.id << ", x:" << globalEntries[i].entry.position.x << ", y:" << globalEntries[i].entry.position.y << '\n';
     }
 
-    return 0;
+    SpatialHash* spatialHash = new SpatialHash(tableSize);
+    spatialHash->Initilize(globalEntries, nrEntries);
+
+    Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
+    //Position testPos(63.0f, 63.0f);
+
+    CloseEntriesAndNrOf closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
+
+    cout << "closeEntries\n";
+    for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
+    {
+        cout << setw(7) << closeEntries.allCloseEntries[i].entry.id << ' ';
+        cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) % tableSize << ' ';
+        cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) % tableSize << ' ';
+        cout << std::fixed << std::setprecision(3) << closeEntries.allCloseEntries[i].distance << ' ';
+
+        cout << '\n';
+    }
+    cout << "closeEntries END";
+    cout << "\n\n\n";
+
+    return spatialHash;
 }
 
 /// <summary>
 /// Have to be called or may the Theoretical Gods have mercy on my soul.
 /// </summary>
 /// <returns>0 if it ran to completion.</returns>
-uint32_t Stop()
+uint32_t Stop(SpatialHash* spatialHash)
 {
     delete spatialHash;
 
     return 0;
 }
 
-uint32_t ExtGetEnteredSize()
+uint32_t ExtGetEnteredSize(SpatialHash* spatialHash)
 {
     return spatialHash->GetEnteredSize();
 }
 
-CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities)
+CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
 }

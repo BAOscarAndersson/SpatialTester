@@ -9,13 +9,13 @@ namespace SpatialTester
     class Tester
     {
         [DllImport("SpatialHash.dll")]
-        public static extern uint Start(uint nrEntries, IntPtr inEntries);
+        public static extern IntPtr Start(uint nrEntries, IntPtr inEntries);
 
         [DllImport("SpatialHash.dll")]
-        public static extern uint Stop();
+        public static extern uint Stop(IntPtr spatialHash);
 
         [DllImport("SpatialHash.dll")]
-        public static extern uint ExtGetEnteredSize();
+        public static extern uint ExtGetEnteredSize(IntPtr spatialHash);
 
         static void Main(string[] args)
         {
@@ -32,9 +32,9 @@ namespace SpatialTester
 
             try
             {
-                uint didItRun = Start(nrEntries, GlobalEntries);
+                IntPtr spatialHash = Start(nrEntries, GlobalEntries);
 
-                uint didItStop = Stop();
+                uint didItStop = Stop(spatialHash);
             }
             finally
             {
