@@ -21,11 +21,10 @@ namespace SpatialTester
         {
             Tester tester = new Tester();
 
-            uint nrEntries = 10;
+            uint nrEntries = 1000;
             int enteredSize = 20;
 
-            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * nrEntries));
-            //Marshal.Copy(byteArray, 0, intPtr, Marshal.SizeOf(byteArray));
+            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * (nrEntries + 1)));
 
             tester.FillEntries(GlobalEntries, nrEntries, enteredSize);
 
@@ -47,17 +46,14 @@ namespace SpatialTester
         {
             Random rand = new Random();
 
-            //rand.Next(100, 999);
-            //(float)rand.NextDouble() * 5 + 500;
-
-            Console.WriteLine("C# gives:");
+            //Console.WriteLine("C# gives:");
             for (int i = 0; i <= nrEntries; i++)
             {
-                float x = (float)rand.NextDouble() * 500;
-                float y = (float)rand.NextDouble() * 500;
+                float x = 500 + (float)rand.NextDouble()*5;
+                float y = 500 + (float)rand.NextDouble()*5;
                 uint id = (uint)rand.Next(100, 999);
 
-                Console.WriteLine("id:" + id + ", x: " + x + ", y: " + y);
+                //Console.WriteLine("id:" + id + ", x: " + x + ", y: " + y);
 
                 Marshal.WriteInt32(entries, i * enteredSize + 0 * 4, (int)id);
                 for (int j = 0; j < 4; j++)

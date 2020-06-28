@@ -8,7 +8,7 @@ extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const P
 using namespace std;
 
 // Temporary values that will probably be determined at runtime later.
-constexpr uint32_t tableSize = 4;                // Needs to be 2^n.
+constexpr uint32_t tableSize = 64;                // Needs to be 2^n.
 constexpr uint32_t reservedLocalEntries = 8;
 
 /* All these vectors are just for development.  They describe which cells of the spatialHash table needs to
@@ -56,6 +56,24 @@ float Distance(const Position a, const Position b)
 /// <param name="sideLength">The size of the Spatial Hash, needs to be a power of two.</param>
 SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength(sideLength), xMask(sideLength - 1), yMask(sideLength - 1)
 {
+    // Verify that sideLength is a power of two.
+  /*  int i = 0;
+    bool lengthVerification = false;
+    do {
+
+        if (pow(2, i) == sideLength)
+            lengthVerification = true;
+
+        if (i > 20)
+        {
+            cout << "ERROR length of the Spatial Hash needs to be a power of two, greater than 2^0 and less than 2^20" << '\n';
+            return;
+        }
+
+        i++;
+
+    } while (lengthVerification == false);*/
+
     // table represents a two dimensional square.
     table = new vector<Cell>();
     table->resize(sideLength * sideLength);
@@ -326,11 +344,12 @@ void* Start(uint32_t nrEntries, Entered* globalEntries)
 
     //globalEntries = inEntries;
     //int32_t* data = new int32_t[nrEntries];
-    cout << '\n' << "C++ reads:" << '\n';
+    
+    /*cout << '\n' << "C++ reads:" << '\n';
     for (int32_t i = 0; i < nrEntries; i++)
     {
         cout << "id:" << globalEntries[i].entry.id << ", x:" << globalEntries[i].entry.position.x << ", y:" << globalEntries[i].entry.position.y << '\n';
-    }
+    }*/
 
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);
