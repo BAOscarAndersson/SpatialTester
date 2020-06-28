@@ -15,7 +15,7 @@ constexpr uint32_t reservedLocalEntries = 8;
 // Temporary living space for GlobalEntries who should live in C# later on.
 // spatialHash might have to live here forever.
 //SpatialHash* spatialHash;
-Entered* globalEntries;
+//Entered* globalEntries;
 
 /* All these vectors are just for development.  They describe which cells of the spatialHash table needs to
 be searched to get the closests neighbours, the different steps is for different search radii.
@@ -301,7 +301,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// Right now a lot of stuff for testing.
 /// </summary>
 /// <returns>A 0 if it ran to the end.</returns>
-void* Start(uint32_t nrEntries, Entered* inEntries)
+void* Start(uint32_t nrEntries, Entered* globalEntries)
 {
     mt19937 rng{ random_device()() };
     uniform_real_distribution<float> rnd_float(900, 1000);
@@ -321,7 +321,7 @@ void* Start(uint32_t nrEntries, Entered* inEntries)
     yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
 
 
-    globalEntries = inEntries;
+    //globalEntries = inEntries;
     //int32_t* data = new int32_t[nrEntries];
     cout << '\n' << "C++ reads:" << '\n';
     for (int32_t i = 0; i < nrEntries; i++)
