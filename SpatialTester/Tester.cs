@@ -22,7 +22,8 @@ namespace SpatialTester
             Tester tester = new Tester();
 
             uint nrEntries = 1000;
-            int enteredSize = 20;
+            int enteredSize = 20;               // int, float, float, uint, uint = 5*4 = 20byte
+            int returnedEntrySize = 16;         // int, float, float, float = 4*4 = 16byte
 
             IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * (nrEntries + 1)));
 
@@ -31,6 +32,15 @@ namespace SpatialTester
             try
             {
                 IntPtr spatialHash = Start(nrEntries, GlobalEntries);
+
+                CloseEntriesAndNrOf returnedEntries = new CloseEntriesAndNrOf();
+
+                Position testPosition = new Position{x = 500f, y = 500f};
+                returnedEntries = ExtGetCloseEntries(testPosition, 10, 5, spatialHash);
+
+                EntryWithDistance[] entriesOnly = tester.ReadEntries(returnedEntries.allCloseEntries, returnedEntries.nrOfEntries, returnedEntrySize);
+
+                tester.PrintEntriesAndDistances(entriesOnly);
 
                 uint didItStop = Stop(spatialHash);
             }
@@ -70,6 +80,46 @@ namespace SpatialTester
                 Marshal.WriteInt32(entries, i * enteredSize + 4 * 4, 7999);
             }
         }
+
+        EntryWithDistance[] ReadEntries(IntPtr entries, uint nrEntries, int entrySize)
+        {
+            EntryWithDistance[] returnedEntries = new EntryWithDistance[nrEntries];
+            byte[] tempBytes = new byte[4];
+
+            for (int i = 0; i < nrEntries; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 0 * 4);
+                }
+                returnedEntries[i].entry.id = BitConverter.ToUInt32(tempBytes, 0);
+                for (int j = 0; j < 4; j++)
+                {
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 1 * 4);
+                }
+                returnedEntries[i].entry.position.x = BitConverter.ToSingle(tempBytes, 0);
+                for (int j = 0; j < 4; j++)
+                {
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 2 * 4);
+                }
+                returnedEntries[i].entry.position.y = BitConverter.ToSingle(tempBytes, 0);
+                for (int j = 0; j < 4; j++)
+                {
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 3 * 4);
+                }
+                returnedEntries[i].distance = BitConverter.ToSingle(tempBytes, 0);
+            }
+
+            return returnedEntries;
+        }
+
+        void PrintEntriesAndDistances(EntryWithDistance[] returnedEntries)
+        {
+            foreach(EntryWithDistance aEntry in returnedEntries)
+            {
+                Console.WriteLine("id: " + aEntry.entry.id + " x: " + aEntry.entry.position.x + " y: " + aEntry.entry.position.y + " dist: " + aEntry.distance);
+            }
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -86,6 +136,7 @@ namespace SpatialTester
         public Position position;
     }
 
+    // int, float, float, uint, uint = 5*4 = 20byte
     [StructLayout(LayoutKind.Sequential)]
     public struct Entered
     {
@@ -94,6 +145,7 @@ namespace SpatialTester
         public uint hashValue;
     }
 
+    // int, float, float, float = 4*4 = 16byte
     [StructLayout(LayoutKind.Sequential)]
     struct EntryWithDistance
     {
@@ -104,7 +156,7 @@ namespace SpatialTester
     struct CloseEntriesAndNrOf
     {
         public uint nrOfEntries;
-        IntPtr allCloseEntries;
+        public IntPtr allCloseEntries;
     };
 }
 

@@ -354,8 +354,8 @@ void* Start(uint32_t nrEntries, Entered* globalEntries)
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);
 
-    Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
-    //Position testPos(63.0f, 63.0f);
+    //Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
+    Position testPos(500.0f, 500.0f);
 
     CloseEntriesAndNrOf closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
 
