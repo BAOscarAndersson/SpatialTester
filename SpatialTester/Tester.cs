@@ -25,7 +25,7 @@ namespace SpatialTester
             int enteredSize = 20;               // int, float, float, uint, uint = 5*4 = 20byte
             int returnedEntrySize = 16;         // int, float, float, float = 4*4 = 16byte
 
-            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * (nrEntries + 1)));
+            IntPtr GlobalEntries = Marshal.AllocHGlobal((int)(enteredSize * nrEntries));
 
             tester.FillEntries(GlobalEntries, nrEntries, enteredSize);
 
@@ -57,7 +57,7 @@ namespace SpatialTester
             Random rand = new Random();
 
             //Console.WriteLine("C# gives:");
-            for (int i = 0; i <= nrEntries; i++)
+            for (int i = 0; i < nrEntries; i++)
             {
                 float x = 500 + (float)rand.NextDouble()*5;
                 float y = 500 + (float)rand.NextDouble()*5;
@@ -90,22 +90,22 @@ namespace SpatialTester
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 0 * 4);
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 0 * 4 + j);
                 }
                 returnedEntries[i].entry.id = BitConverter.ToUInt32(tempBytes, 0);
                 for (int j = 0; j < 4; j++)
                 {
-                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 1 * 4);
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 1 * 4 + j);
                 }
                 returnedEntries[i].entry.position.x = BitConverter.ToSingle(tempBytes, 0);
                 for (int j = 0; j < 4; j++)
                 {
-                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 2 * 4);
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 2 * 4 + j);
                 }
                 returnedEntries[i].entry.position.y = BitConverter.ToSingle(tempBytes, 0);
                 for (int j = 0; j < 4; j++)
                 {
-                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 3 * 4);
+                    tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 3 * 4 + j);
                 }
                 returnedEntries[i].distance = BitConverter.ToSingle(tempBytes, 0);
             }
