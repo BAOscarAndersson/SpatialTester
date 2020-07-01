@@ -20,6 +20,7 @@ namespace SpatialTester
         [DllImport("SpatialHash.dll")]
         public static extern void Update(uint numberOfEntries, IntPtr spatialHash);
 
+
         static void Main(string[] args)
         {
             Tester tester = new Tester();
@@ -36,16 +37,15 @@ namespace SpatialTester
             {
                 IntPtr spatialHash = Start(nrEntries, GlobalEntries);
 
-
+                // First get
                 tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
 
-
+                // Update
                 tester.ChangeEntriesPosition(spatialHash, nrEntries, enteredSize);
                 Update(nrEntries, spatialHash);
 
-
+                // Second get
                 tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
-
 
                 uint didItStop = Stop(spatialHash);
             }

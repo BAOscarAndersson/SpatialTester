@@ -388,11 +388,24 @@ uint32_t Stop(SpatialHash* spatialHash)
     return 0;
 }
 
+/// <summary>
+/// Retrives entries close to input position from the spatialHash.
+/// </summary>
+/// <param name="position">Position to check for close entries.</param>
+/// <param name="d">How far away from the position entries can be to be close.</param>
+/// <param name="maxEntities">Maximum number of entries to return.</param>
+/// <param name="spatialHash">Which spatialHash to look in.</param>
+/// <returns>A ordered list of entries close to input position.</returns>
 CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
 }
 
+/// <summary>
+/// Checks if entries of input spatial hash has changed and updates itself accordingly.
+/// </summary>
+/// <param name="numberOfEntries">Number of entries to check if they need to be updated.</param>
+/// <param name="spatialHash">The spatial hash to update.</param>
 void Update(uint32_t numberOfEntries, SpatialHash* spatialHash)
 {
     spatialHash->UpdateTable(numberOfEntries);
