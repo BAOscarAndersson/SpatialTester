@@ -17,6 +17,9 @@ namespace SpatialTester
         [DllImport("SpatialHash.dll")]
         public static extern CloseEntriesAndNrOf ExtGetCloseEntries(Position position, float d, uint maxEntities, IntPtr spatialHash);
 
+        [DllImport("SpatialHash.dll")]
+        public static extern void Update(uint numberOfEntries, IntPtr spatialHash);
+
         static void Main(string[] args)
         {
             Tester tester = new Tester();
@@ -33,14 +36,16 @@ namespace SpatialTester
             {
                 IntPtr spatialHash = Start(nrEntries, GlobalEntries);
 
-                CloseEntriesAndNrOf returnedEntries = new CloseEntriesAndNrOf();
 
-                Position testPosition = new Position{x = 500f, y = 500f};
-                returnedEntries = ExtGetCloseEntries(testPosition, 10, 5, spatialHash);
+                tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
 
-                EntryWithDistance[] entriesOnly = tester.ReadEntries(returnedEntries.allCloseEntries, returnedEntries.nrOfEntries, returnedEntrySize);
 
-                tester.PrintEntriesAndDistances(entriesOnly);
+                tester.ChangeEntriesPosition(spatialHash, nrEntries, enteredSize);
+                Update(nrEntries, spatialHash);
+
+
+                tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
+
 
                 uint didItStop = Stop(spatialHash);
             }
@@ -50,6 +55,17 @@ namespace SpatialTester
             }
 
             Console.ReadLine();
+        }
+
+        void GetAndPrintCloseEntries(IntPtr spatialHash, Tester tester, int returnedEntrySize)
+        {
+            CloseEntriesAndNrOf returnedEntries = new CloseEntriesAndNrOf();
+            Position testPosition = new Position { x = 500f, y = 500f };
+            returnedEntries = ExtGetCloseEntries(testPosition, 10, 5, spatialHash);
+
+            EntryWithDistance[] entriesOnly = tester.ReadEntries(returnedEntries.allCloseEntries, returnedEntries.nrOfEntries, returnedEntrySize);
+
+            tester.PrintEntriesAndDistances(entriesOnly);
         }
 
         void FillEntries(IntPtr entries, uint nrEntries, int enteredSize)
@@ -81,7 +97,46 @@ namespace SpatialTester
             }
         }
 
-        EntryWithDistance[] ReadEntries(IntPtr entries, uint nrEntries, int entrySize)
+        void ChangeEntriesPosition(IntPtr entries, uint nrEntries, int enteredSize)
+        {
+            byte[] xBytes = new byte[4];
+            byte[] yBytes = new byte[4];
+
+            for (int i = 0; i < nrEntries; i++)
+            {
+                // Read and change X
+                for (int j = 0; j < 4; j++)
+                {
+                    xBytes[j] = Marshal.ReadByte(entries, i * enteredSize + 1 * 4 + j);
+                }
+                float x = BitConverter.ToSingle(xBytes, 0);
+
+                x += 0.001f;
+
+                for (int j = 0; j < 4; j++)
+                {
+                    xBytes = BitConverter.GetBytes(x);
+                    Marshal.WriteByte(entries, i * enteredSize + 1 * 4 + j, xBytes[j]);
+                }
+
+                // Read and change Y
+                for (int j = 0; j < 4; j++)
+                {
+                    yBytes[j] = Marshal.ReadByte(entries, i * enteredSize + 1 * 4 + j);
+                }
+                float y = BitConverter.ToSingle(xBytes, 0);
+
+                y += 0.001f;
+
+                for (int j = 0; j < 4; j++)
+                {
+                    yBytes = BitConverter.GetBytes(y);
+                    Marshal.WriteByte(entries, i * enteredSize + 2 * 4 + j, yBytes[j]);
+                }
+            }
+        }
+
+       EntryWithDistance[] ReadEntries(IntPtr entries, uint nrEntries, int entrySize)
         {
             EntryWithDistance[] returnedEntries = new EntryWithDistance[nrEntries];
             byte[] tempBytes = new byte[4];
@@ -120,6 +175,8 @@ namespace SpatialTester
                 Console.WriteLine("id: " + aEntry.entry.id + " x: " + aEntry.entry.position.x + " y: " + aEntry.entry.position.y + " dist: " + aEntry.distance);
             }
         }
+
+
     }
 
     [StructLayout(LayoutKind.Sequential)]

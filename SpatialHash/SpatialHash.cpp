@@ -4,6 +4,7 @@
 extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
+extern "C" __declspec(dllexport) void Update(uint32_t numberOfEntries, SpatialHash * spatialHash);
 
 using namespace std;
 
@@ -121,7 +122,8 @@ void SpatialHash::Initilize(Entered* inAllEntries, uint32_t numberOfEntries)
 /// in which case it inserts them into that cell and removes them
 /// from their old one.
 /// </summary>
-void SpatialHash::Update(uint32_t numberOfEntries)
+
+void SpatialHash::UpdateTable(uint32_t numberOfEntries)
 {
     for (uint32_t i = 0; i < numberOfEntries; i++)
     {
@@ -321,7 +323,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// Will start the Spatial Hash in the future. Run the constructor etc.
 /// Right now a lot of stuff for testing.
 /// </summary>
-/// <returns>A 0 if it ran to the end.</returns>
+/// <returns>A pointer to the started SpatialHash.</returns>
 void* Start(uint32_t nrEntries, Entered* globalEntries)
 {
     mt19937 rng{ random_device()() };
@@ -362,10 +364,10 @@ void* Start(uint32_t nrEntries, Entered* globalEntries)
     cout << "closeEntries\n";
     for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
     {
-        cout << setw(7) << closeEntries.allCloseEntries[i].entry.id << ' ';
-        cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) % tableSize << ' ';
-        cout << setw(7) << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) % tableSize << ' ';
-        cout << std::fixed << std::setprecision(3) << closeEntries.allCloseEntries[i].distance << ' ';
+        cout << closeEntries.allCloseEntries[i].entry.id << ' ';
+        cout << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) << ' ';
+        cout << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) << ' ';
+        cout << closeEntries.allCloseEntries[i].distance << ' ';
 
         cout << '\n';
     }
@@ -389,4 +391,9 @@ uint32_t Stop(SpatialHash* spatialHash)
 CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
+}
+
+void Update(uint32_t numberOfEntries, SpatialHash* spatialHash)
+{
+    spatialHash->UpdateTable(numberOfEntries);
 }

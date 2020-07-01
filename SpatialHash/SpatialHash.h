@@ -110,7 +110,7 @@ public:
     /// NOTE: Make sure you are inputting the correct number of Entry:s.
     /// </summary>
     /// <param name="numberOfEntries>The number of Entry:s in allEntries.</param>
-    void Update(uint32_t numberOfEntries);
+    void UpdateTable(uint32_t numberOfEntries);
 
     /// <summary>
     /// Removes a entry from the hash table. NOTE: It does not remove them from *allEntries. That part
