@@ -315,7 +315,6 @@ void SpatialHash::UpdateEntry(Entered* entry)
     {
         Remove(entry);
         InsertInTable(entry);
-        cout << entry->entry.id << " was moved." << '\n';
     }
 }
 

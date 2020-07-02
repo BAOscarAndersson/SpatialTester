@@ -25,7 +25,7 @@ namespace SpatialTester
         {
             Tester tester = new Tester();
 
-            uint nrEntries = 1000;
+            uint nrEntries = 1;
             int enteredSize = 20;               // int, float, float, uint, uint = 5*4 = 20byte
             int returnedEntrySize = 16;         // int, float, float, float = 4*4 = 16byte
 
@@ -41,7 +41,7 @@ namespace SpatialTester
                 tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
 
                 // Update
-                tester.ChangeEntriesPosition(spatialHash, nrEntries, enteredSize);
+                tester.ChangeEntriesPosition(GlobalEntries, nrEntries, enteredSize);
                 Update(nrEntries, spatialHash);
 
                 // Second get
@@ -72,28 +72,32 @@ namespace SpatialTester
         {
             Random rand = new Random();
 
-            //Console.WriteLine("C# gives:");
             for (int i = 0; i < nrEntries; i++)
             {
                 float x = 500 + (float)rand.NextDouble()*5;
                 float y = 500 + (float)rand.NextDouble()*5;
                 uint id = (uint)rand.Next(100, 999);
 
-                //Console.WriteLine("id:" + id + ", x: " + x + ", y: " + y);
-
+                // Write id
                 Marshal.WriteInt32(entries, i * enteredSize + 0 * 4, (int)id);
+
+                // Write x
                 for (int j = 0; j < 4; j++)
                 {
                     byte[] xBytes = BitConverter.GetBytes(x);
                     Marshal.WriteByte(entries, i * enteredSize + 1*4 + j, xBytes[j]);
                 }
+
+                // Write y
                 for (int j = 0; j < 4; j++)
                 {
                     byte[] yBytes = BitConverter.GetBytes(y);
                     Marshal.WriteByte(entries, i * enteredSize + 2*4 + j, yBytes[j]);
                 }
-                Marshal.WriteInt32(entries, i * enteredSize + 3 * 4, 100110);
-                Marshal.WriteInt32(entries, i * enteredSize + 4 * 4, 7999);
+
+                // Write zero to these, because it's internal stuff for the Spatial Hash.
+                Marshal.WriteInt32(entries, i * enteredSize + 3 * 4, 0);
+                Marshal.WriteInt32(entries, i * enteredSize + 4 * 4, 0);
             }
         }
 
@@ -111,7 +115,7 @@ namespace SpatialTester
                 }
                 float x = BitConverter.ToSingle(xBytes, 0);
 
-                x += 0.001f;
+                x += 0.01f;
 
                 for (int j = 0; j < 4; j++)
                 {
@@ -122,11 +126,11 @@ namespace SpatialTester
                 // Read and change Y
                 for (int j = 0; j < 4; j++)
                 {
-                    yBytes[j] = Marshal.ReadByte(entries, i * enteredSize + 1 * 4 + j);
+                    yBytes[j] = Marshal.ReadByte(entries, i * enteredSize + 2 * 4 + j);
                 }
                 float y = BitConverter.ToSingle(xBytes, 0);
 
-                y += 0.001f;
+                y += 0.01f;
 
                 for (int j = 0; j < 4; j++)
                 {
@@ -143,21 +147,28 @@ namespace SpatialTester
 
             for (int i = 0; i < nrEntries; i++)
             {
+                // Read id
                 for (int j = 0; j < 4; j++)
                 {
                     tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 0 * 4 + j);
                 }
                 returnedEntries[i].entry.id = BitConverter.ToUInt32(tempBytes, 0);
+
+                // Read x
                 for (int j = 0; j < 4; j++)
                 {
                     tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 1 * 4 + j);
                 }
                 returnedEntries[i].entry.position.x = BitConverter.ToSingle(tempBytes, 0);
+
+                // Read y
                 for (int j = 0; j < 4; j++)
                 {
                     tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 2 * 4 + j);
                 }
                 returnedEntries[i].entry.position.y = BitConverter.ToSingle(tempBytes, 0);
+
+                // Read distance from test position.
                 for (int j = 0; j < 4; j++)
                 {
                     tempBytes[j] = Marshal.ReadByte(entries, i * entrySize + 3 * 4 + j);
