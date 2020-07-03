@@ -243,8 +243,11 @@ uint32_t SpatialHash::GetEnteredSize()
 /// <param name="entry">Entry to insert.</param>
 void SpatialHash::InsertInTable(Entered* entered)
 {
-    unsigned int cellNr = CalculateCellNr(entered->entry.position);
-
+    uint32_t cellNr = CalculateCellNr(entered->entry.position);
+    SpatialHash::InsertInTable(entered, cellNr);
+}
+void SpatialHash::InsertInTable(Entered* entered, uint32_t cellNr)
+{
     // The index for the entry in localEntries and in table is saved for efficient removal.
     entered->nrInCell = this->table->at(cellNr).localEntries->size();
     entered->hashValue = cellNr;
@@ -310,11 +313,11 @@ void SpatialHash::InitializeOffsets()
 /// <param name="entry">Entry will be put into correct cell.</param>
 void SpatialHash::UpdateEntry(Entered* entry)
 {
-    unsigned int currenthashValue = CalculateCellNr(entry->entry.position);
+    uint32_t currenthashValue = CalculateCellNr(entry->entry.position);
     if (currenthashValue != entry->hashValue)
     {
         Remove(entry);
-        InsertInTable(entry);
+        InsertInTable(entry, currenthashValue);
     }
 }
 

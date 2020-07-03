@@ -164,6 +164,7 @@ private:
     std::vector<EntryWithDistance>* closeEntries;
 
     // Inserts a entry from *allEntries into the hash table.
+    void InsertInTable(Entered* entry, uint32_t cellNr);
     void InsertInTable(Entered* entry);
 
     // Overloaded hash function.
