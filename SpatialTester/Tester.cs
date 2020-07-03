@@ -15,11 +15,13 @@ namespace SpatialTester
         public static extern uint Stop(IntPtr spatialHash);
 
         [DllImport("SpatialHash.dll")]
-        public static extern CloseEntriesAndNrOf ExtGetCloseEntries(Position position, float d, uint maxEntities, IntPtr spatialHash);
+        public static extern CloseEntriesAndNrOf GetEntries(Position position, float d, uint maxEntities, IntPtr spatialHash);
 
         [DllImport("SpatialHash.dll")]
         public static extern void Update(uint numberOfEntries, IntPtr spatialHash);
 
+        [DllImport("SpatialHash.dll")]
+        public static extern void Remove(uint entryIndex, IntPtr spatialHash);
 
         static void Main(string[] args)
         {
@@ -37,14 +39,23 @@ namespace SpatialTester
             {
                 IntPtr spatialHash = Start(nrEntries, GlobalEntries);
 
-                // First get
+                // First get.
+                Console.WriteLine("1:");
                 tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
 
-                // Update
+                // Update.
                 tester.ChangeEntriesPosition(GlobalEntries, nrEntries, enteredSize);
                 Update(nrEntries, spatialHash);
 
-                // Second get
+                // Second get.
+                Console.WriteLine("2:");
+                tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
+
+                // Removal, danger danger.
+                Remove(0, spatialHash);
+
+                // Third get.
+                Console.WriteLine("3:");
                 tester.GetAndPrintCloseEntries(spatialHash, tester, returnedEntrySize);
 
                 uint didItStop = Stop(spatialHash);
@@ -61,7 +72,7 @@ namespace SpatialTester
         {
             CloseEntriesAndNrOf returnedEntries = new CloseEntriesAndNrOf();
             Position testPosition = new Position { x = 500f, y = 500f };
-            returnedEntries = ExtGetCloseEntries(testPosition, 10, 5, spatialHash);
+            returnedEntries = GetEntries(testPosition, 10, 5, spatialHash);
 
             EntryWithDistance[] entriesOnly = tester.ReadEntries(returnedEntries.allCloseEntries, returnedEntries.nrOfEntries, returnedEntrySize);
 

@@ -96,6 +96,11 @@ class SpatialHash
 {
 public:
 
+    /* All the entries to the spatial hash is stored in this list,
+     * rather then in the actual hash table, to save space and make the
+     * table more cash friendly. */
+    Entered* allEntries;
+
     /// <summary>
     /// After the class have been constructed this is called and will go through all the Entered's in
     /// *allEntries and insert them into the hash table.
@@ -117,10 +122,10 @@ public:
     /// is on whoever controls it.
     /// </summary>
     /// <param name="entry">Entry to remove from hash table.</param>
-    void Remove(Entered* entry);
+    void RemoveEntry(Entered* entry);
 
     /// <summary>
-    /// Gets a number (input of) entites that are within a (input) distance of a (input) position.
+    /// Gets a number entites that are within a distance of a position.
     /// </summary>
     /// <param name="pos">Where to look for entites.</param>
     /// <param name="d">Radius of the search area.</param>
@@ -147,11 +152,6 @@ public:
 private:
     // Actual hash table. Stores only pointers to the data of allEntries and minimumOffsets.
     std::vector<Cell>* table;
-
-    /* All the entries to the spatial hash is stored in this list,
-     * rather then in the actual hash table, to save space and make the
-     * table more cash friendly. */
-    Entered* allEntries;
 
     // The size of the table needs to be (2^n x 2^n) for simpler realization of modulo function.
     const uint32_t sideLength;

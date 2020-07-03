@@ -3,8 +3,9 @@
 
 extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) CloseEntriesAndNrOf  ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
+extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
 extern "C" __declspec(dllexport) void Update(uint32_t numberOfEntries, SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
 
 using namespace std;
 
@@ -135,7 +136,7 @@ void SpatialHash::UpdateTable(uint32_t numberOfEntries)
 /// Removes input entry from hash table.
 /// </summary>
 /// <param name="entry">Entry to remove from hash table.</param>
-void SpatialHash::Remove(Entered* entry)
+void SpatialHash::RemoveEntry(Entered* entry)
 {
     // If the entry is at the end of the vector.
     if (entry->nrInCell == table->at(entry->hashValue).localEntries->size() - 1)
@@ -316,7 +317,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
     uint32_t currenthashValue = CalculateCellNr(entry->entry.position);
     if (currenthashValue != entry->hashValue)
     {
-        Remove(entry);
+        RemoveEntry(entry);
         InsertInTable(entry, currenthashValue);
     }
 }
@@ -367,8 +368,8 @@ void* Start(uint32_t nrEntries, Entered* globalEntries)
     for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
     {
         cout << closeEntries.allCloseEntries[i].entry.id << ' ';
-        cout << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.x) << ' ';
-        cout << static_cast<int>(closeEntries.allCloseEntries[i].entry.position.y) << ' ';
+        cout << closeEntries.allCloseEntries[i].entry.position.x << ' ';
+        cout << closeEntries.allCloseEntries[i].entry.position.y << ' ';
         cout << closeEntries.allCloseEntries[i].distance << ' ';
 
         cout << '\n';
@@ -398,7 +399,7 @@ uint32_t Stop(SpatialHash* spatialHash)
 /// <param name="maxEntities">Maximum number of entries to return.</param>
 /// <param name="spatialHash">Which spatialHash to look in.</param>
 /// <returns>A ordered list of entries close to input position.</returns>
-CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
+CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
 }
@@ -411,4 +412,9 @@ CloseEntriesAndNrOf ExtGetCloseEntries(const Position position, float d, const u
 void Update(uint32_t numberOfEntries, SpatialHash* spatialHash)
 {
     spatialHash->UpdateTable(numberOfEntries);
+}
+
+void Remove(uint32_t entryIndex, SpatialHash* spatialHash)
+{
+    spatialHash->RemoveEntry(&spatialHash->allEntries[entryIndex]);
 }
