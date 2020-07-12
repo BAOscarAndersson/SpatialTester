@@ -1,19 +1,19 @@
 #include "pch.h"
 #include "SpatialHash.h"
 
-extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries);
+using namespace std;
+
+// Interop declarations.
+extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries, uint32_t tableSize);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash);
+extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Update(uint32_t numberOfEntries, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
 
-using namespace std;
-
-// Temporary values that will probably be determined at runtime later.
-constexpr uint32_t tableSize = 64;                // Needs to be 2^n.
+// Temporary value that will probably be determined at runtime later.
 constexpr uint32_t reservedLocalEntries = 8;
 
-/* All these vectors are just for development.  They describe which cells of the spatialHash table needs to
+/* All these vectors are just for development. They describe which cells of the spatialHash table needs to
 be searched to get the closests neighbours, the different steps is for different search radii.
 They will be replaced with something more reasonable later. Especially since there will need to be a lot more
 steps. Preferably programmatically since I ain't got the fortitude to calculate anymore than this by hand.*/
@@ -123,7 +123,6 @@ void SpatialHash::Initilize(Entered* inAllEntries, uint32_t numberOfEntries)
 /// in which case it inserts them into that cell and removes them
 /// from their old one.
 /// </summary>
-
 void SpatialHash::UpdateTable(uint32_t numberOfEntries)
 {
     for (uint32_t i = 0; i < numberOfEntries; i++)
@@ -219,7 +218,6 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntries(const Position pos, const float
             j++;
         }
 
-        // Returns a max number for easier interop, but might make sense to spend the effort to return a dynamic array?
         if (closeEntries->size() >= maxEntities)
         {
             closeEntries->resize(maxEntities);
@@ -323,18 +321,14 @@ void SpatialHash::UpdateEntry(Entered* entry)
 }
 
 /// <summary>
-/// Will start the Spatial Hash in the future. Run the constructor etc.
-/// Right now a lot of stuff for testing.
+/// Interop for constructing the SpatialHash class and initializing it.
 /// </summary>
+/// <param name="nrEntries">The amount of entries to start the hash with, allocating and such.</param>
+/// <param name="globalEntries">The array of structres that represents something put into the Spatial Hash.</param>
+/// <param name="tableSize">The length of a side of the square Spatial Hash, needs to be 2^n. (Where n is a integer > 0.)</param>
 /// <returns>A pointer to the started SpatialHash.</returns>
-void* Start(uint32_t nrEntries, Entered* globalEntries)
+void* Start(uint32_t nrEntries, Entered* globalEntries, uint32_t tableSize)
 {
-    mt19937 rng{ random_device()() };
-    uniform_real_distribution<float> rnd_float(900, 1000);
-    uniform_real_distribution<float> small_rnd_float(0.0f, 0.1f);
-    uniform_real_distribution<float> not_so_rnd_float(500, 505);
-    uniform_int_distribution<uint32_t> rnd_int(100, 999);
-
     // These vectors needs to be done in a sane way sometime in the future.
     xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep1.begin(), xStep1.end());
     xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep2.begin(), xStep2.end());
@@ -347,35 +341,8 @@ void* Start(uint32_t nrEntries, Entered* globalEntries)
     yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
 
 
-    //globalEntries = inEntries;
-    //int32_t* data = new int32_t[nrEntries];
-    
-    /*cout << '\n' << "C++ reads:" << '\n';
-    for (int32_t i = 0; i < nrEntries; i++)
-    {
-        cout << "id:" << globalEntries[i].entry.id << ", x:" << globalEntries[i].entry.position.x << ", y:" << globalEntries[i].entry.position.y << '\n';
-    }*/
-
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);
-
-    //Position testPos(not_so_rnd_float(rng), not_so_rnd_float(rng));
-    Position testPos(500.0f, 500.0f);
-
-    CloseEntriesAndNrOf closeEntries = spatialHash->GetCloseEntries(testPos, 10.0f, 5);
-
-    cout << "closeEntries\n";
-    for (uint32_t i = 0; i != closeEntries.nrOfEntries; i++)
-    {
-        cout << closeEntries.allCloseEntries[i].entry.id << ' ';
-        cout << closeEntries.allCloseEntries[i].entry.position.x << ' ';
-        cout << closeEntries.allCloseEntries[i].entry.position.y << ' ';
-        cout << closeEntries.allCloseEntries[i].distance << ' ';
-
-        cout << '\n';
-    }
-    cout << "closeEntries END";
-    cout << "\n\n\n";
 
     return spatialHash;
 }
