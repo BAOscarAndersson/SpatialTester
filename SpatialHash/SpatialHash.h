@@ -7,6 +7,7 @@
 #include <memory>
 #include <math.h>
 #include <cstdint>
+#include <fstream>
 
 /// <summary>
 /// Everything stored in the Spatial Hash have a 2d-coordinate, which is recorded as Position.

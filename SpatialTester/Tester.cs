@@ -8,19 +8,19 @@ namespace SpatialTester
 {
     class Tester
     {
-        [DllImport("SpatialHash.dll")]
-        public static extern IntPtr Start(uint nrEntries, IntPtr inEntries);
+        [DllImport("SpatialHash.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr Start(uint nrEntries, IntPtr inEntries, uint tableSize);
 
-        [DllImport("SpatialHash.dll")]
+        [DllImport("SpatialHash.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern uint Stop(IntPtr spatialHash);
 
-        [DllImport("SpatialHash.dll")]
+        [DllImport("SpatialHash.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern CloseEntriesAndNrOf GetEntries(Position position, float d, uint maxEntities, IntPtr spatialHash);
 
-        [DllImport("SpatialHash.dll")]
+        [DllImport("SpatialHash.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void Update(uint numberOfEntries, IntPtr spatialHash);
 
-        [DllImport("SpatialHash.dll")]
+        [DllImport("SpatialHash.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void Remove(uint entryIndex, IntPtr spatialHash);
 
         static void Main(string[] args)
@@ -37,7 +37,7 @@ namespace SpatialTester
 
             try
             {
-                IntPtr spatialHash = Start(nrEntries, GlobalEntries);
+                IntPtr spatialHash = Start(nrEntries, GlobalEntries, 8);
 
                 // First get.
                 Console.WriteLine("1:");

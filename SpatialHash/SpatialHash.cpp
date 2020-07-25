@@ -29,12 +29,12 @@ vector<int32_t> yStep3 = { -2, -2,  2, 2 };
 vector<int32_t> xStep4 = { 0, -3, 3, 0, -1, 1, -3,  3, -3, 3, -1, 1 };
 vector<int32_t> yStep4 = { -3,  0, 0, 3, -3, 3, -1, -1,  1, 1,  3, 3 };
 
-// These two vectors are just the above vectors added together.
+// These two vectors are just the above vectors added together, in Start() method.
 vector<int32_t> xOffsetsToCalculate{};
 vector<int32_t> yOffsetsToCalculate{};
 
 // the GetCloseEntries will be looped through in steps of these sizes.
-vector<size_t> stepSizes = { xStep1.size(), xStep2.size(), xStep3.size(), xStep4.size() };
+vector<size_t> stepSizes{};
 
 /// <summary>
 /// Proper modulo function.
@@ -330,16 +330,47 @@ void SpatialHash::UpdateEntry(Entered* entry)
 void* Start(uint32_t nrEntries, Entered* globalEntries, uint32_t tableSize)
 {
     // These vectors needs to be done in a sane way sometime in the future.
-    xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep1.begin(), xStep1.end());
-    xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep2.begin(), xStep2.end());
-    xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep3.begin(), xStep3.end());
-    xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep4.begin(), xStep4.end());
+    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep1.begin(), xStep1.end());
+    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep2.begin(), xStep2.end());
+    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep3.begin(), xStep3.end());
+    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep4.begin(), xStep4.end());
 
-    yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep1.begin(), yStep1.end());
-    yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep2.begin(), yStep2.end());
-    yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep3.begin(), yStep3.end());
-    yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
+    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep1.begin(), yStep1.end());
+    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep2.begin(), yStep2.end());
+    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep3.begin(), yStep3.end());
+    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
 
+    ifstream offsetsFile;
+    offsetsFile.open("F:\\Prog\\Repos\\SpaceFiller\\bin\\Debug\\netcoreapp3.1\\Offsets.abi", ios::in | ios::binary);
+
+    if (offsetsFile.is_open())
+    {
+        int32_t numberOfSteps = 0;
+
+        offsetsFile.read((char*)&numberOfSteps, sizeof(numberOfSteps));
+
+        for (uint32_t i = 0; i < numberOfSteps; i++)
+        {
+            int32_t stepSize = 0;
+            offsetsFile.read((char*)&stepSize, sizeof(stepSize));
+
+            stepSizes.push_back(stepSize);
+
+            for (uint32_t j = 0; j < stepSize; j++)
+            {
+                uint32_t x = 0;
+                offsetsFile.read((char*)&x, sizeof(x));
+
+                uint32_t y = 0;
+                offsetsFile.read((char*)&y, sizeof(y));
+
+                xOffsetsToCalculate.push_back(x);
+                yOffsetsToCalculate.push_back(y);
+            }
+        }
+
+        offsetsFile.close();
+    }
 
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);
