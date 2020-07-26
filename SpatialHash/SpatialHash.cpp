@@ -13,23 +13,7 @@ extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * 
 // Temporary value that will probably be determined at runtime later.
 constexpr uint32_t reservedLocalEntries = 8;
 
-/* All these vectors are just for development. They describe which cells of the spatialHash table needs to
-be searched to get the closests neighbours, the different steps is for different search radii.
-They will be replaced with something more reasonable later. Especially since there will need to be a lot more
-steps. Preferably programmatically since I ain't got the fortitude to calculate anymore than this by hand.*/
-vector<int32_t> xStep1 = { -1,  0,  1, -1, 0, 1, -1, 0, 1 };
-vector<int32_t> yStep1 = { -1, -1, -1,  0, 0, 0,  1, 1, 1 };
-
-vector<int32_t> xStep2 = { 0, -2, 2, 0, -1,  1, -2,  2, -2, 2, -1, 1 };
-vector<int32_t> yStep2 = { -2, 0,  0, 2, -2, -2, -1, -1,  1, 1,  2, 2 };
-
-vector<int32_t> xStep3 = { -2,  2, -2, 2 };
-vector<int32_t> yStep3 = { -2, -2,  2, 2 };
-
-vector<int32_t> xStep4 = { 0, -3, 3, 0, -1, 1, -3,  3, -3, 3, -1, 1 };
-vector<int32_t> yStep4 = { -3,  0, 0, 3, -3, 3, -1, -1,  1, 1,  3, 3 };
-
-// These two vectors are just the above vectors added together, in Start() method.
+// Contains the offsets. Used to be done manually and it was easier to put them in two different vectors then.
 vector<int32_t> xOffsetsToCalculate{};
 vector<int32_t> yOffsetsToCalculate{};
 
@@ -80,12 +64,18 @@ SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength
     table = new vector<Cell>();
     table->resize(sideLength * sideLength);
 
-    for (int32_t i = 0; i != table->size(); i++)
+    for (uint32_t i = 0; i != table->size(); i++)
     {
         table->at(i).localEntries = new vector<Entered*>();
         table->at(i).localEntries->reserve(reservedLocalEntries);
+
+        uint32_t numberOfOffsets = 0;
+
+        for (uint32_t j = 0; j != stepSizes.size(); j++)
+            numberOfOffsets += stepSizes[j];
+
         table->at(i).offsets = new vector<uint32_t>();
-        table->at(i).offsets->reserve(100);
+        table->at(i).offsets->reserve(numberOfOffsets);
     }
     InitializeOffsets();
     closeEntries = new vector<EntryWithDistance>();
@@ -329,17 +319,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// <returns>A pointer to the started SpatialHash.</returns>
 void* Start(uint32_t nrEntries, Entered* globalEntries, uint32_t tableSize)
 {
-    // These vectors needs to be done in a sane way sometime in the future.
-    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep1.begin(), xStep1.end());
-    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep2.begin(), xStep2.end());
-    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep3.begin(), xStep3.end());
-    //xOffsetsToCalculate.insert(xOffsetsToCalculate.end(), xStep4.begin(), xStep4.end());
-
-    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep1.begin(), yStep1.end());
-    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep2.begin(), yStep2.end());
-    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep3.begin(), yStep3.end());
-    //yOffsetsToCalculate.insert(yOffsetsToCalculate.end(), yStep4.begin(), yStep4.end());
-
+    // The offsets are calculated before runtime and saved in a file that is loaded here.
     ifstream offsetsFile;
     offsetsFile.open("F:\\Prog\\Repos\\SpaceFiller\\bin\\Debug\\netcoreapp3.1\\Offsets.abi", ios::in | ios::binary);
 
