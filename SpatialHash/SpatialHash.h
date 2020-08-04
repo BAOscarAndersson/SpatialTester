@@ -132,7 +132,9 @@ public:
     /// <param name="d">Radius of the search area.</param>
     /// <param name="maxEntities">No more than this number of entires will be returned.</param>
     /// <returns>Pointer to a list of entrise sorted by distance from input position.</returns>
-    CloseEntriesAndNrOf GetCloseEntries(const Position position, float d, const unsigned short int maxEntities);
+    CloseEntriesAndNrOf GetCloseEntries(Position position, float d, unsigned short int maxEntities);
+
+    CloseEntriesAndNrOf* GetCloseEntriesBulk(unsigned short int nrSearches, Position* positions, float d, unsigned short int maxEntities);
 
     /// <summary>
     /// The size in bytes of the elements of allEntries. This is so that which manages allEntries can
@@ -161,8 +163,11 @@ private:
     const int32_t xMask;
     const int32_t yMask;
 
-    // Sorted list of entries to return from GetCloseEntities().
+    // Sorted list of entries to return, with number of elements in it, from GetCloseEntities().
     std::vector<EntryWithDistance>* closeEntries;
+
+    // List of above lists with number of entries, returned by GetCloseEntitiesBulk().
+    std::vector<CloseEntriesAndNrOf>* closeEntriesBulk;
 
     // Inserts a entry from *allEntries into the hash table.
     void InsertInTable(Entered* entry, uint32_t cellNr);

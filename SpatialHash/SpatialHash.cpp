@@ -6,8 +6,8 @@ using namespace std;
 // Interop declarations.
 extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries, uint32_t tableSize);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) void Update(uint32_t numberOfEntries, SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(Position position, float d, unsigned short int maxEntities, SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) void Update(int32_t numberOfEntries, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
 
 // Temporary value that will probably be determined at runtime later.
@@ -148,10 +148,11 @@ void SpatialHash::RemoveEntry(Entered* entry)
 /// <param name="d">The radius of the search area.</param>
 /// <param name="maxEntities">The max number of entities to return.</param>
 /// <returns>Entities within the search area.</returns>
-CloseEntriesAndNrOf SpatialHash::GetCloseEntries(const Position pos, const float d, const unsigned short int maxEntities)
+CloseEntriesAndNrOf SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
     closeEntries->clear();
+    closeEntries->reserve(maxEntities);
 
     // This is the cell that will be the origo of the search.
     uint32_t cellNr = CalculateCellNr(pos);
@@ -219,6 +220,18 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntries(const Position pos, const float
     } while (i < stepSizes.size());
 
     return CloseEntriesAndNrOf{ static_cast<uint32_t>(closeEntries->size()), closeEntries->data() };
+}
+
+CloseEntriesAndNrOf* SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearches, Position* pos, float d, unsigned short int maxEntities)
+{
+    // Since new entries to return is to be calculated we need to get rid of the old ones.
+    closeEntriesBulk->clear();
+    closeEntriesBulk->reserve(nrSearches);
+
+    for (unsigned short int i = 0; i < nrSearches; i++)
+    {
+        SpatialHash::GetCloseEntries(pos[i], d, maxEntities);
+    }
 }
 
 uint32_t SpatialHash::GetEnteredSize()
@@ -377,7 +390,7 @@ uint32_t Stop(SpatialHash* spatialHash)
 /// <param name="maxEntities">Maximum number of entries to return.</param>
 /// <param name="spatialHash">Which spatialHash to look in.</param>
 /// <returns>A ordered list of entries close to input position.</returns>
-CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned short int maxEntities, SpatialHash* spatialHash)
+CloseEntriesAndNrOf GetEntries(const Position position, float d, unsigned short int maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntries(position, d, maxEntities);
 }
@@ -387,7 +400,7 @@ CloseEntriesAndNrOf GetEntries(const Position position, float d, const unsigned 
 /// </summary>
 /// <param name="numberOfEntries">Number of entries to check if they need to be updated.</param>
 /// <param name="spatialHash">The spatial hash to update.</param>
-void Update(uint32_t numberOfEntries, SpatialHash* spatialHash)
+void Update(int32_t numberOfEntries, SpatialHash* spatialHash)
 {
     spatialHash->UpdateTable(numberOfEntries);
 }
