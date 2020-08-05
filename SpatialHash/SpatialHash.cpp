@@ -79,7 +79,7 @@ SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength
     }
     InitializeOffsets();
     closeEntries = new vector<EntryWithDistance>();
-    closeEntries->reserve(100);
+    nrOfEntries = new vector<uint32_t>();
 }
 
 SpatialHash::~SpatialHash()
@@ -148,11 +148,11 @@ void SpatialHash::RemoveEntry(Entered* entry)
 /// <param name="d">The radius of the search area.</param>
 /// <param name="maxEntities">The max number of entities to return.</param>
 /// <returns>Entities within the search area.</returns>
-CloseEntriesAndNrOf SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxEntities)
+void SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
-    closeEntries->clear();
-    closeEntries->reserve(maxEntities);
+    //closeEntries->clear();
+    //closeEntries->reserve(maxEntities);
 
     // This is the cell that will be the origo of the search.
     uint32_t cellNr = CalculateCellNr(pos);
@@ -219,19 +219,26 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntries(Position pos, float d, unsigned
 
     } while (i < stepSizes.size());
 
-    return CloseEntriesAndNrOf{ static_cast<uint32_t>(closeEntries->size()), closeEntries->data() };
+    nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
+
+    
 }
 
 CloseEntriesAndNrOf* SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearches, Position* pos, float d, unsigned short int maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
-    closeEntriesBulk->clear();
-    closeEntriesBulk->reserve(nrSearches);
+    closeEntries->clear();
+    closeEntries->reserve(nrSearches*maxEntities);
+
+    nrOfEntries->clear();
+    nrOfEntries->reserve(nrSearches);
 
     for (unsigned short int i = 0; i < nrSearches; i++)
     {
         SpatialHash::GetCloseEntries(pos[i], d, maxEntities);
     }
+
+    return CloseEntriesAndNrOf{ nrOfEntries->data(), closeEntries->data() };
 }
 
 uint32_t SpatialHash::GetEnteredSize()
