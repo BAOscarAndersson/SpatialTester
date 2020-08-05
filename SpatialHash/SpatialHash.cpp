@@ -224,7 +224,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxE
     
 }
 
-CloseEntriesAndNrOf* SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearches, Position* pos, float d, unsigned short int maxEntities)
+CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearches, Position* pos, float d, unsigned short int maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
     closeEntries->clear();
