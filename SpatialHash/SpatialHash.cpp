@@ -211,8 +211,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxE
 
         if (closeEntries->size() >= maxEntities)
         {
-            closeEntries->resize(maxEntities);
-            return CloseEntriesAndNrOf{ static_cast<uint32_t>(closeEntries->size()), closeEntries->data() };
+            return;
         }
 
         i++;
@@ -221,7 +220,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, unsigned short int maxE
 
     nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
 
-    
+    return;
 }
 
 CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearches, Position* pos, float d, unsigned short int maxEntities)
@@ -235,7 +234,8 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(unsigned short int nrSearch
 
     for (unsigned short int i = 0; i < nrSearches; i++)
     {
-        SpatialHash::GetCloseEntries(pos[i], d, maxEntities);
+        // Max entities for GetCloseEntries have to take into account previously added entries.
+        SpatialHash::GetCloseEntries(pos[i], d, maxEntities + closeEntries->size());
     }
 
     return CloseEntriesAndNrOf{ nrOfEntries->data(), closeEntries->data() };
