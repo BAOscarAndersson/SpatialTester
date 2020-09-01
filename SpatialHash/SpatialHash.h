@@ -132,9 +132,9 @@ public:
     /// <param name="d">Radius of the search area.</param>
     /// <param name="maxEntities">No more than this number of entires will be returned.</param>
     /// <returns>Pointer to a list of entrise sorted by distance from input position.</returns>
-    void GetCloseEntries(Position position, float d, unsigned short int maxEntities);
+    void GetCloseEntries(Position position, float d, int32_t maxEntities);
 
-    CloseEntriesAndNrOf GetCloseEntriesBulk(unsigned short int nrSearches, Position* positions, float d, unsigned short int maxEntities);
+    CloseEntriesAndNrOf GetCloseEntriesBulk(int32_t nrSearches, Position* positions, float d, int32_t maxEntities);
 
     /// <summary>
     /// The size in bytes of the elements of allEntries. This is so that which manages allEntries can
