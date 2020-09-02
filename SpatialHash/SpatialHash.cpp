@@ -208,6 +208,8 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
 
         if (closeEntries->size() >= maxEntities)
         {
+            closeEntries->resize(maxEntities);
+            nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
             return;
         }
 
