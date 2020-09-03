@@ -194,7 +194,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
                 EntryWithDistance tempEntry = closeEntries->at(h);
 
                 int32_t k = h - 1;
-                while (k >= 0 && closeEntries->at(k).distance > tempEntry.distance)
+                while (k >= currentStart && closeEntries->at(k).distance > tempEntry.distance)
                 {
                     closeEntries->at(k + 1) = closeEntries->at(k);
                     k--;
