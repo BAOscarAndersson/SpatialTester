@@ -137,13 +137,6 @@ public:
     CloseEntriesAndNrOf GetCloseEntriesBulk(int32_t nrSearches, Position* positions, float d, int32_t maxEntities);
 
     /// <summary>
-    /// The size in bytes of the elements of allEntries. This is so that which manages allEntries can
-    /// allocate a an array that at least have the right size.
-    /// </summary>
-    /// <returns>The number of bytes in an Entered.</returns>
-    uint32_t GetEnteredSize();
-
-    /// <summary>
     /// Creates a square Spatial Hash table with length "size".
     /// allEntries is the array used to input Entries for insertion into the hash table.
     /// </summary>

@@ -40,26 +40,8 @@ float Distance(const Position a, const Position b)
 /// Creates a Spatial Hash of a certain size.
 /// </summary>
 /// <param name="sideLength">The size of the Spatial Hash, needs to be a power of two.</param>
-SpatialHash::SpatialHash(size_t sideLength) : allEntries(allEntries), sideLength(sideLength), xMask(sideLength - 1), yMask(sideLength - 1)
+SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(pow(2, sidePower)), xMask(sideLength - 1), yMask(sideLength - 1)
 {
-    // Verify that sideLength is a power of two.
-  /*  int i = 0;
-    bool lengthVerification = false;
-    do {
-
-        if (pow(2, i) == sideLength)
-            lengthVerification = true;
-
-        if (i > 20)
-        {
-            cout << "ERROR length of the Spatial Hash needs to be a power of two, greater than 2^0 and less than 2^20" << '\n';
-            return;
-        }
-
-        i++;
-
-    } while (lengthVerification == false);*/
-
     // table represents a two dimensional square.
     table = new vector<Cell>();
     table->resize(sideLength * sideLength);
@@ -243,11 +225,6 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Positio
     }
 
     return CloseEntriesAndNrOf{ nrOfEntries->data(), closeEntries->data() };
-}
-
-uint32_t SpatialHash::GetEnteredSize()
-{
-    return sizeof(Entered);
 }
 
 /// <summary>
