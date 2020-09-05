@@ -170,7 +170,7 @@ private:
     uint32_t CalculateCellNr(const Position pos);
 
     // Hash function.
-    uint32_t CalculateCellNr(const float x, float y);
+    uint32_t CalculateCellNr(const float x, const float y);
 
     // Called when constructing the class. Points all cells to their offsets.
     // TODO: Smarter way to generate the offsets. Put the initialization outside constructor?
@@ -178,4 +178,7 @@ private:
 
     // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
     void UpdateEntry(Entered* entry);
+
+    // Used in GetCloseEntries
+    void SortCloseEntries(int32_t from);
 };

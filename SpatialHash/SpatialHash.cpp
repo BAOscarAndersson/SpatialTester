@@ -109,7 +109,7 @@ void SpatialHash::UpdateTable(uint32_t numberOfEntries)
 /// <param name="entry">Entry to remove from hash table.</param>
 void SpatialHash::RemoveEntry(Entered* entry)
 {
-    // If the entry is at the end of the vector.
+    // If the entry is at the end of the vector it can be removed straight away.
     if (entry->nrInCell == table->at(entry->hashValue).localEntries->size() - 1)
     {
         table->at(entry->hashValue).localEntries->pop_back();
@@ -129,7 +129,6 @@ void SpatialHash::RemoveEntry(Entered* entry)
 /// <param name="pos">Where to search for entities.</param>
 /// <param name="d">The radius of the search area.</param>
 /// <param name="maxEntities">The max number of entities to return.</param>
-/// <returns>Entities within the search area.</returns>
 void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
 {
     // This is the cell that will be the origo of the search.
@@ -145,49 +144,37 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
     entites. */
     do {
         stepSize += stepSizes.at(i);
+        int32_t currentStart = closeEntries->size();
 
         // Loops through all the offsets that belong to the current step.
         while (j < stepSize)
         {
-            int32_t currentStart = closeEntries->size();
+            
             uint32_t offsetCell = cellNr + table->at(cellNr).offsets->at(j);
 
             // Loops through all the entries of the current cell.
             for (size_t m = 0; m < table->at(offsetCell).localEntries->size(); m++)
             {
-                // Looks crazy, but here we are.
-                EntryWithDistance tempEntry = EntryWithDistance(
-                    table->at(offsetCell).localEntries->at(m)->entry,
-                    Distance(table->at(offsetCell).localEntries->at(m)->entry.position, pos));
+                float tempDistance = Distance(table->at(offsetCell).localEntries->at(m)->entry.position, pos);
 
                 /* Imporant because entites sharing cells can be very far from each other because
                  * of the hashing/modulo on insertion. */
-                if (tempEntry.distance < d)
+                if (tempDistance < d)
                 {
-                    closeEntries->push_back(tempEntry);
+                    Entry tempEntry = table->at(offsetCell).localEntries->at(m)->entry;
+                    EntryWithDistance tempEntryWithDistance = EntryWithDistance(tempEntry, tempDistance);
+
+                    closeEntries->push_back(tempEntryWithDistance);
                 }
-            }
-
-            /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
-             * a small number of elements in this list so using Insert Sort probably makes sense.
-             * This should be tested sometime though. */
-            for (int32_t h = currentStart; h < static_cast<int>(closeEntries->size()); h++)
-            {
-                EntryWithDistance tempEntry = closeEntries->at(h);
-
-                int32_t k = h - 1;
-                while (k >= currentStart && closeEntries->at(k).distance > tempEntry.distance)
-                {
-                    closeEntries->at(k + 1) = closeEntries->at(k);
-                    k--;
-                }
-
-                closeEntries->at(k + 1) = tempEntry;
             }
 
             j++;
         }
 
+        // If there are to many entries only the closest should be kept so they need to be orderd.
+        SortCloseEntries(currentStart);
+
+        // If there's enough elements the function can return.
         if (closeEntries->size() >= maxEntities)
         {
             closeEntries->resize(maxEntities);
@@ -202,6 +189,50 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
     nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
 
     return;
+}
+
+/// <summary>
+/// Sorts the elements of closeEntries which is needed for GetCloseEntries
+/// to be able to tell which elements are the closests.
+/// </summary>
+/// <param name="from">From which index to sort the list.</param>
+void SpatialHash::SortCloseEntries(int32_t from)
+{
+    /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
+     * a small number of elements in this list so using Insert Sort probably makes sense.
+     * This should be tested sometime though. */
+    for (int32_t h = from; h < static_cast<int>(closeEntries->size()); h++)
+    {
+        EntryWithDistance tempEntry = closeEntries->at(h);
+
+        int32_t k = h - 1;
+        while (k >= from && closeEntries->at(k).distance > tempEntry.distance)
+        {
+            closeEntries->at(k + 1) = closeEntries->at(k);
+            k--;
+        }
+
+        closeEntries->at(k + 1) = tempEntry;
+    }
+
+    /* Selection sort*/
+    /*for (int32_t i = from; i < closeEntries->size() - 1; i++)
+    {
+        int jMin = i;
+
+        for (int32_t j = i + 1; j < closeEntries->size(); j++)
+        {
+            if (closeEntries->at(j).distance < closeEntries->at(jMin).distance)
+            {
+                jMin = j;
+            }
+        }
+
+        if (jMin != i)
+        {
+            swap(closeEntries->at(i), closeEntries->at(jMin));
+        }
+    }*/
 }
 
 CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* pos, float d, int32_t maxEntities)
