@@ -10,16 +10,6 @@ extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(int32_t nrOfPosi
 extern "C" __declspec(dllexport) void Update(int32_t numberOfEntries, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
 
-// Temporary value that will probably be determined at runtime later.
-constexpr uint32_t reservedLocalEntries = 8;
-
-// Contains the offsets. Used to be done manually and it was easier to put them in two different vectors then.
-vector<int32_t> xOffsetsToCalculate{};
-vector<int32_t> yOffsetsToCalculate{};
-
-// the GetCloseEntries will be looped through in steps of these sizes.
-vector<size_t> stepSizes{};
-
 /// <summary>
 /// Proper modulo function.
 /// </summary>
@@ -40,8 +30,11 @@ float Distance(const Position a, const Position b)
 /// Creates a Spatial Hash of a certain size.
 /// </summary>
 /// <param name="sideLength">The size of the Spatial Hash, needs to be a power of two.</param>
-SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(pow(2, sidePower)), xMask(sideLength - 1), yMask(sideLength - 1)
+SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(pow(2, sidePower)+1), xMask(sideLength-1), yMask(sideLength-1)
 {
+    // Temporary value that will probably be determined at runtime later.
+    constexpr uint32_t reservedLocalEntries = 16;
+
     // table represents a two dimensional square.
     table = new vector<Cell>();
     table->resize(sideLength * sideLength);
@@ -51,21 +44,25 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
         table->at(i).localEntries = new vector<Entered*>();
         table->at(i).localEntries->reserve(reservedLocalEntries);
 
-        uint32_t numberOfOffsets = 0;
+        table->at(i).offsets = new vector<vector<uint32_t>*>();
 
-        for (uint32_t j = 0; j != stepSizes.size(); j++)
-            numberOfOffsets += stepSizes[j];
-
-        table->at(i).offsets = new vector<uint32_t>();
-        table->at(i).offsets->reserve(numberOfOffsets);
+        globalOffsets = new vector<vector<uint32_t>*>();
+        globalOffsets->reserve(100);
     }
-    InitializeOffsets();
+    
     closeEntries = new vector<EntryWithDistance>();
     nrOfEntries = new vector<uint32_t>();
 }
 
 SpatialHash::~SpatialHash()
 {
+    for (uint32_t i = 0; i != globalOffsets->size(); i++)
+    {
+        delete globalOffsets->at(i);
+    }
+
+    delete globalOffsets;
+
     for (size_t i = 0; i != table->size(); i++)
     {
         delete table->at(i).localEntries;
@@ -82,6 +79,8 @@ SpatialHash::~SpatialHash()
 /// </summary>
 void SpatialHash::Initilize(Entered* inAllEntries, uint32_t numberOfEntries)
 {
+    InitializeOffsets();
+
     allEntries = inAllEntries;
 
     for (uint32_t i = 0; i < numberOfEntries; i++)
@@ -134,23 +133,18 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
     // This is the cell that will be the origo of the search.
     uint32_t cellNr = CalculateCellNr(pos);
 
-    // A bunch of loop variables.
-    uint32_t i = 0;
-    uint32_t j = 0;
-    uint32_t stepSize = 0;
-
     /* Loops through the different steps. If you find enough close entities
     in a step, you can end the loop and return since there can be no other closer
     entites. */
-    do {
-        stepSize += stepSizes.at(i);
+    for (uint32_t i = 0; i < table->at(cellNr).offsets->size() ; i++)
+    {
         int32_t currentStart = closeEntries->size();
 
         // Loops through all the offsets that belong to the current step.
-        while (j < stepSize)
+        for(uint32_t j = 0; j< table->at(cellNr).offsets->at(i)->size(); j++)
         {
-            
-            uint32_t offsetCell = cellNr + table->at(cellNr).offsets->at(j);
+
+            uint32_t offsetCell = cellNr + table->at(cellNr).offsets->at(i)->at(j);
 
             // Loops through all the entries of the current cell.
             for (size_t m = 0; m < table->at(offsetCell).localEntries->size(); m++)
@@ -167,8 +161,6 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
                     closeEntries->push_back(tempEntryWithDistance);
                 }
             }
-
-            j++;
         }
 
         // If there are to many entries only the closest should be kept so they need to be orderd.
@@ -181,10 +173,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
             nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
             return;
         }
-
-        i++;
-
-    } while (i < stepSizes.size());
+    }
 
     nrOfEntries->push_back(static_cast<uint32_t>(closeEntries->size()));
 
@@ -308,20 +297,105 @@ unsigned int SpatialHash::CalculateCellNr(float x, float y)
 /// </summary>
 void SpatialHash::InitializeOffsets()
 {
+    ReadOffsetsFromFile();
+
+    numberOfOffsets = 0;
+    for (uint32_t j = 0; j < xOffsetsToCalculate.size(); j++)
+        numberOfOffsets += xOffsetsToCalculate[j].size();
+
     for (int32_t y = 0; y != sideLength; y++)
     {
         for (int32_t x = 0; x != sideLength; x++)
         {
-            uint32_t i = x + y * sideLength;
-            for (uint32_t j = 0; j < xOffsetsToCalculate.size(); j++)
+            InitializeOffsetsInCell(x, y);
+        }
+    }
+}
+
+void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
+{
+    uint32_t i = x + y * sideLength;
+
+    vector<uint32_t>* cellOffsets;
+
+    // Loop through all the steps.
+    for (uint32_t k = 0; k < numberOfSteps; k++)
+    {
+        cellOffsets = new vector<uint32_t>();
+
+        // Loop through all the offsets of the current step.
+        for (uint32_t j = 0; j < xOffsetsToCalculate[k].size(); j++)
+        {
+            // Offsets are calculated from the unlocalized offsets.
+            int32_t tx = x + xOffsetsToCalculate[k][j];
+            int32_t ty = y + yOffsetsToCalculate[k][j];
+            tx = ProperMod(tx, sideLength);
+            ty = ProperMod(ty, sideLength);
+
+            cellOffsets->push_back((tx + ty * sideLength) - i);
+        }
+
+        bool found = false;
+
+        // Loop through all the offsets in global offsets and check if the offset already exist.
+        for (uint32_t j = 0; j < globalOffsets->size(); j++)
+        {
+            if (*globalOffsets->at(j) == *cellOffsets)
             {
-                int32_t tx = x + xOffsetsToCalculate[j];
-                int32_t ty = y + yOffsetsToCalculate[j];
-                tx = ProperMod(tx, sideLength);
-                ty = ProperMod(ty, sideLength);
-                table->at(i).offsets->push_back((tx + ty * sideLength) - i);
+                delete cellOffsets;
+                table->at(i).offsets->push_back(globalOffsets->at(j));
+                found = true;
+                break;
             }
         }
+
+        if (!found)
+        {
+            globalOffsets->push_back(cellOffsets);
+            table->at(i).offsets->push_back(cellOffsets);
+        }
+    }
+}
+
+void SpatialHash::ReadOffsetsFromFile()
+{
+    // The offsets are calculated before runtime and saved in a file that is loaded here.
+    ifstream offsetsFile;
+    offsetsFile.open("F:\\Prog\\Repos\\SpaceFiller\\bin\\Debug\\netcoreapp3.1\\Offsets.abi", ios::in | ios::binary);
+
+    if (offsetsFile.is_open())
+    {
+        numberOfSteps = 0;
+
+        vector<int32_t> xOffsets;
+        vector<int32_t> yOffsets;
+
+        offsetsFile.read((char*)&numberOfSteps, sizeof(numberOfSteps));
+
+        for (uint32_t i = 0; i < numberOfSteps; i++)
+        {
+            int32_t stepSize = 0;
+            offsetsFile.read((char*)&stepSize, sizeof(stepSize));
+            
+            xOffsets.clear();
+            yOffsets.clear();
+
+            for (uint32_t j = 0; j < stepSize; j++)
+            {
+                uint32_t x = 0;
+                offsetsFile.read((char*)&x, sizeof(x));
+                xOffsets.push_back(x);
+
+                uint32_t y = 0;
+                offsetsFile.read((char*)&y, sizeof(y));
+                yOffsets.push_back(y);
+            }
+
+            xOffsetsToCalculate.push_back(xOffsets);
+            yOffsetsToCalculate.push_back(yOffsets);
+        }
+
+        offsetsFile.close();
     }
 }
 
@@ -349,39 +423,6 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// <returns>A pointer to the started SpatialHash.</returns>
 void* Start(uint32_t nrEntries, Entered* globalEntries, uint32_t tableSize)
 {
-    // The offsets are calculated before runtime and saved in a file that is loaded here.
-    ifstream offsetsFile;
-    offsetsFile.open("F:\\Prog\\Repos\\SpaceFiller\\bin\\Debug\\netcoreapp3.1\\Offsets.abi", ios::in | ios::binary);
-
-    if (offsetsFile.is_open())
-    {
-        int32_t numberOfSteps = 0;
-
-        offsetsFile.read((char*)&numberOfSteps, sizeof(numberOfSteps));
-
-        for (uint32_t i = 0; i < numberOfSteps; i++)
-        {
-            int32_t stepSize = 0;
-            offsetsFile.read((char*)&stepSize, sizeof(stepSize));
-
-            stepSizes.push_back(stepSize);
-
-            for (uint32_t j = 0; j < stepSize; j++)
-            {
-                uint32_t x = 0;
-                offsetsFile.read((char*)&x, sizeof(x));
-
-                uint32_t y = 0;
-                offsetsFile.read((char*)&y, sizeof(y));
-
-                xOffsetsToCalculate.push_back(x);
-                yOffsetsToCalculate.push_back(y);
-            }
-        }
-
-        offsetsFile.close();
-    }
-
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);
 

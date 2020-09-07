@@ -84,7 +84,7 @@ struct CloseEntriesAndNrOf
 struct Cell
 {
     std::vector<Entered*>* localEntries;
-    std::vector<uint32_t>* offsets;
+    std::vector<std::vector<uint32_t>*>* offsets;
 };
 
 /// <summary>
@@ -162,6 +162,19 @@ private:
     // Number of elements added to closeEntries for each GetCloseEntities().
     std::vector<uint32_t>* nrOfEntries;
 
+    // GetCloseEntries will loop through this number of steps.
+    uint32_t numberOfSteps;
+
+    // Contains the unlocalized offsets. That is offsets that aren't adapted to any certain cell.
+    std::vector<std::vector<int32_t>> xOffsetsToCalculate{};
+    std::vector<std::vector<int32_t>> yOffsetsToCalculate{};
+
+    // Total number of offsets in stepSizes, the offsets read from a file.
+    uint32_t numberOfOffsets;
+
+    // Stores all the offsets that the cells point to.
+    std::vector<std::vector<uint32_t>*>* globalOffsets;
+
     // Inserts a entry from *allEntries into the hash table.
     void InsertInTable(Entered* entry, uint32_t cellNr);
     void InsertInTable(Entered* entry);
@@ -175,6 +188,9 @@ private:
     // Called when constructing the class. Points all cells to their offsets.
     // TODO: Smarter way to generate the offsets. Put the initialization outside constructor?
     void InitializeOffsets();
+
+    void InitializeOffsetsInCell(uint32_t x, uint32_t y);
+    void ReadOffsetsFromFile();
 
     // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
     void UpdateEntry(Entered* entry);
