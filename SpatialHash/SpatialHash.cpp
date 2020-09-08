@@ -13,18 +13,27 @@ extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * 
 /// <summary>
 /// Proper modulo function.
 /// </summary>
-int ProperMod(const uint32_t a, const int b)
+inline int ProperMod(const uint32_t a, const int b)
 {
     return (a < 0 ? (((a % b) + b) % b) : (a % b));
+}
+
+inline float sqrt1(const float& n)
+{
+    static union { int i; float f; } u;
+    u.i = 0x5F375A86 - (*(int*)&n >> 1);
+    return (int(3) - n * u.f * u.f) * n * u.f * 0.5f;
 }
 
 /// <summary>
 /// Euclidian distance.
 /// </summary>
-float Distance(const Position a, const Position b)
+inline float Distance(const Position a, const Position b)
 {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
+
+
 
 /// <summary>
 /// Creates a Spatial Hash of a certain size.
@@ -52,6 +61,8 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
     
     closeEntries = new vector<EntryWithDistance>();
     nrOfEntries = new vector<uint32_t>();
+    numberOfOffsets = 0;
+    numberOfSteps = 0;
 }
 
 SpatialHash::~SpatialHash()
@@ -185,7 +196,7 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
 /// to be able to tell which elements are the closests.
 /// </summary>
 /// <param name="from">From which index to sort the list.</param>
-void SpatialHash::SortCloseEntries(int32_t from)
+inline void SpatialHash::SortCloseEntries(int32_t from)
 {
     /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
      * a small number of elements in this list so using Insert Sort probably makes sense.
@@ -299,7 +310,6 @@ void SpatialHash::InitializeOffsets()
 {
     ReadOffsetsFromFile();
 
-    numberOfOffsets = 0;
     for (uint32_t j = 0; j < xOffsetsToCalculate.size(); j++)
         numberOfOffsets += xOffsetsToCalculate[j].size();
 
