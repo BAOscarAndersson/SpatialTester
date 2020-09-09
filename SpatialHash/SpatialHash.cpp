@@ -4,7 +4,7 @@
 using namespace std;
 
 // Interop declarations.
-extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entered * inEntries, uint32_t tableSize);
+extern "C" __declspec(dllexport) void* Start(uint32_t nrEntries, Entry * inEntries, uint32_t tableSize);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(int32_t nrOfPositions, Position* position, float d, int32_t maxEntities, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Update(int32_t numberOfEntries, SpatialHash * spatialHash);
@@ -18,13 +18,6 @@ inline int ProperMod(const uint32_t a, const int b)
     return (a < 0 ? (((a % b) + b) % b) : (a % b));
 }
 
-inline float sqrt1(const float& n)
-{
-    static union { int i; float f; } u;
-    u.i = 0x5F375A86 - (*(int*)&n >> 1);
-    return (int(3) - n * u.f * u.f) * n * u.f * 0.5f;
-}
-
 /// <summary>
 /// Euclidian distance.
 /// </summary>
@@ -32,8 +25,6 @@ inline float Distance(const Position a, const Position b)
 {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
-
-
 
 /// <summary>
 /// Creates a Spatial Hash of a certain size.
@@ -50,7 +41,7 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
 
     for (uint32_t i = 0; i != table->size(); i++)
     {
-        table->at(i).localEntries = new vector<Entered*>();
+        table->at(i).localEntries = new vector<Entered>();
         table->at(i).localEntries->reserve(reservedLocalEntries);
 
         table->at(i).offsets = new vector<vector<uint32_t>*>();
@@ -88,7 +79,7 @@ SpatialHash::~SpatialHash()
 /// <summary>
 /// Inserts all the entries in allEntries into the hash table.
 /// </summary>
-void SpatialHash::Initilize(Entered* inAllEntries, uint32_t numberOfEntries)
+void SpatialHash::Initilize(Entry* inAllEntries, uint32_t numberOfEntries)
 {
     InitializeOffsets();
 
@@ -107,10 +98,18 @@ void SpatialHash::Initilize(Entered* inAllEntries, uint32_t numberOfEntries)
 /// </summary>
 void SpatialHash::UpdateTable(uint32_t numberOfEntries)
 {
-    for (uint32_t i = 0; i < numberOfEntries; i++)
+    for (uint32_t i = 0; i < table->size(); i++)
     {
-        UpdateEntry(&allEntries[i]);
+        for (uint32_t j = 0; j < table->at(i).localEntries->size(); j++)
+        {
+            UpdateEntry(&table->at(i).localEntries->at(j));
+        }
     }
+}
+
+void SpatialHash::RemoveEntry(Entry* entry)
+{
+
 }
 
 /// <summary>
@@ -127,7 +126,7 @@ void SpatialHash::RemoveEntry(Entered* entry)
     else
     {
         // If the entry isn't at the end of the vector, it's switched with the entry that is.
-        table->at(entry->hashValue).localEntries->back()->nrInCell = entry->nrInCell;
+        table->at(entry->hashValue).localEntries->back().nrInCell = entry->nrInCell;
         table->at(entry->hashValue).localEntries->at(entry->nrInCell) = table->at(entry->hashValue).localEntries->back();
         table->at(entry->hashValue).localEntries->pop_back();
     }
@@ -160,13 +159,13 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
             // Loops through all the entries of the current cell.
             for (size_t m = 0; m < table->at(offsetCell).localEntries->size(); m++)
             {
-                float tempDistance = Distance(table->at(offsetCell).localEntries->at(m)->entry.position, pos);
+                float tempDistance = Distance(table->at(offsetCell).localEntries->at(m).entry.position, pos);
 
                 /* Imporant because entites sharing cells can be very far from each other because
                  * of the hashing/modulo on insertion. */
                 if (tempDistance < d)
                 {
-                    Entry tempEntry = table->at(offsetCell).localEntries->at(m)->entry;
+                    Entry tempEntry = table->at(offsetCell).localEntries->at(m).entry;
                     EntryWithDistance tempEntryWithDistance = EntryWithDistance(tempEntry, tempDistance);
 
                     closeEntries->push_back(tempEntryWithDistance);
@@ -262,18 +261,14 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Positio
 /// Inserts an entry into the spatial hash table.
 /// </summary>
 /// <param name="entry">Entry to insert.</param>
-void SpatialHash::InsertInTable(Entered* entered)
+void SpatialHash::InsertInTable(Entry* entry)
 {
-    uint32_t cellNr = CalculateCellNr(entered->entry.position);
-    SpatialHash::InsertInTable(entered, cellNr);
+    uint32_t cellNr = CalculateCellNr(entry->position);
+    SpatialHash::InsertInTable(entry, cellNr);
 }
-void SpatialHash::InsertInTable(Entered* entered, uint32_t cellNr)
+void SpatialHash::InsertInTable(Entry* entry, uint32_t cellNr)
 {
-    // The index for the entry in localEntries and in table is saved for efficient removal.
-    entered->nrInCell = this->table->at(cellNr).localEntries->size();
-    entered->hashValue = cellNr;
-
-    this->table->at(cellNr).localEntries->push_back(entered);
+    this->table->at(cellNr).localEntries->push_back(Entered(*entry, this->table->at(cellNr).localEntries->size(), cellNr));
 }
 
 /// <summary>
@@ -420,7 +415,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
     if (currenthashValue != entry->hashValue)
     {
         RemoveEntry(entry);
-        InsertInTable(entry, currenthashValue);
+        InsertInTable(&entry->entry, currenthashValue);
     }
 }
 
@@ -431,7 +426,7 @@ void SpatialHash::UpdateEntry(Entered* entry)
 /// <param name="globalEntries">The array of structres that represents something put into the Spatial Hash.</param>
 /// <param name="tableSize">The length of a side of the square Spatial Hash, needs to be 2^n. (Where n is a integer > 0.)</param>
 /// <returns>A pointer to the started SpatialHash.</returns>
-void* Start(uint32_t nrEntries, Entered* globalEntries, uint32_t tableSize)
+void* Start(uint32_t nrEntries, Entry* globalEntries, uint32_t tableSize)
 {
     SpatialHash* spatialHash = new SpatialHash(tableSize);
     spatialHash->Initilize(globalEntries, nrEntries);

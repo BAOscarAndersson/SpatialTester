@@ -83,7 +83,7 @@ struct CloseEntriesAndNrOf
 /// </summary>
 struct Cell
 {
-    std::vector<Entered*>* localEntries;
+    std::vector<Entered>* localEntries;
     std::vector<std::vector<uint32_t>*>* offsets;
 };
 
@@ -100,7 +100,7 @@ public:
     /* All the entries to the spatial hash is stored in this list,
      * rather then in the actual hash table, to save space and make the
      * table more cash friendly. */
-    Entered* allEntries;
+    Entry* allEntries;
 
     /// <summary>
     /// After the class have been constructed this is called and will go through all the Entered's in
@@ -108,7 +108,7 @@ public:
     /// </summary>
     /// <param name="allEntries">Everything that is in the hash map should be in this array</param>
     /// <param name="numberOfEntries>The number of Entry:s in allEntries.</param>
-    void Initilize(Entered* inAllEntries, uint32_t numberOfEntries);
+    void Initilize(Entry* inAllEntries, uint32_t numberOfEntries);
 
     /// <summary>
     /// Checks all the Entered's in *allEntries to see if they have moved to a new cell. If they have
@@ -123,7 +123,7 @@ public:
     /// is on whoever controls it.
     /// </summary>
     /// <param name="entry">Entry to remove from hash table.</param>
-    void RemoveEntry(Entered* entry);
+    void RemoveEntry(Entry* entry);
 
     /// <summary>
     /// Gets a number entites that are within a distance of a position.
@@ -176,8 +176,13 @@ private:
     std::vector<std::vector<uint32_t>*>* globalOffsets;
 
     // Inserts a entry from *allEntries into the hash table.
-    void InsertInTable(Entered* entry, uint32_t cellNr);
-    void InsertInTable(Entered* entry);
+    void InsertInTable(Entry* entry, uint32_t cellNr);
+    void InsertInTable(Entry* entry);
+
+    void RemoveEntry(Entered* entry);
+
+    // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
+    void UpdateEntry(Entered* entry);
 
     // Overloaded hash function.
     uint32_t CalculateCellNr(const Position pos);
@@ -191,9 +196,6 @@ private:
 
     void InitializeOffsetsInCell(uint32_t x, uint32_t y);
     void ReadOffsetsFromFile();
-
-    // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
-    void UpdateEntry(Entered* entry);
 
     // Used in GetCloseEntries
     void SortCloseEntries(int32_t from);
