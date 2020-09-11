@@ -46,7 +46,7 @@ struct Entered
     uint32_t nrInCell;
     uint32_t hashValue;
 
-    Entered(Entry inEntry, uint32_t inNrInCell, uint32_t inHashValue) : entry(inEntry), nrInCell(inNrInCell), hashValue(inHashValue) {}
+    Entered(Entry inEntry, uint32_t inNrInCell, uint32_t inHashValue) :entry(inEntry), nrInCell(inNrInCell), hashValue(inHashValue) {}
     Entered() : entry(), nrInCell(0), hashValue(0) {}
     ~Entered() {}
 };
@@ -66,6 +66,17 @@ struct EntryWithDistance
     ~EntryWithDistance() {}
 };
 
+struct EntryIdWithDistance
+{
+    uint32_t id;
+    float distance;
+
+    EntryIdWithDistance(uint32_t inId, float inDistance) : id(inId), distance(inDistance) {}
+    EntryIdWithDistance() : id(0), distance(0.0f) {}
+
+    ~EntryIdWithDistance() {}
+};
+
 /// <summary>
 /// GetCloseEntries returns this because it creates a array of EntryWithDistance but 
 /// also needs to return how many elements there is in the array.
@@ -83,7 +94,7 @@ struct CloseEntriesAndNrOf
 /// </summary>
 struct Cell
 {
-    std::vector<Entered>* localEntries;
+    std::vector<Entry>* localEntries;
     std::vector<std::vector<uint32_t>*>* offsets;
 };
 
@@ -96,12 +107,6 @@ struct Cell
 class SpatialHash
 {
 public:
-
-    /* All the entries to the spatial hash is stored in this list,
-     * rather then in the actual hash table, to save space and make the
-     * table more cash friendly. */
-    Entry* allEntries;
-
     /// <summary>
     /// After the class have been constructed this is called and will go through all the Entered's in
     /// *allEntries and insert them into the hash table.
@@ -116,14 +121,14 @@ public:
     /// NOTE: Make sure you are inputting the correct number of Entry:s.
     /// </summary>
     /// <param name="numberOfEntries>The number of Entry:s in allEntries.</param>
-    void UpdateTable(uint32_t numberOfEntries);
+    void UpdateTable();
 
     /// <summary>
     /// Removes a entry from the hash table. NOTE: It does not remove them from *allEntries. That part
     /// is on whoever controls it.
     /// </summary>
     /// <param name="entry">Entry to remove from hash table.</param>
-    void RemoveEntry(Entry* entry);
+    void RemoveEntryFromTable(uint32_t entryIndex);
 
     /// <summary>
     /// Gets a number entites that are within a distance of a position.
@@ -146,8 +151,18 @@ public:
     ~SpatialHash();
 
 private:
+
     // Actual hash table. Stores only pointers to the data of allEntries and minimumOffsets.
     std::vector<Cell>* table;
+
+    /* All the entries to the spatial hash is stored in this list,
+     * rather then in the actual hash table, to save space and make the
+     * table more cash friendly. */
+    Entry* allEntries;
+
+   std::vector<Entered>* allEntered;
+
+    uint32_t numberOfAllEntries;
 
     // The size of the table needs to be (2^n x 2^n) for simpler realization of modulo function.
     const uint32_t sideLength;
@@ -176,13 +191,15 @@ private:
     std::vector<std::vector<uint32_t>*>* globalOffsets;
 
     // Inserts a entry from *allEntries into the hash table.
-    void InsertInTable(Entry* entry, uint32_t cellNr);
-    void InsertInTable(Entry* entry);
+    Entered InsertInTable(Entry* entry, uint32_t cellNr);
+    Entered InsertInTable(Entry* entry);
 
-    void RemoveEntry(Entered* entry);
+    void RemoveEntryFromCell(Entered* entered);
 
     // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
-    void UpdateEntry(Entered* entry);
+    void UpdateEntered(Entered* entered);
+
+    void GetCloseEntriesInCell(uint32_t cellIndex, Position pos, float d);
 
     // Overloaded hash function.
     uint32_t CalculateCellNr(const Position pos);
