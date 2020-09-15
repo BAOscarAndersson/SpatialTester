@@ -95,7 +95,7 @@ struct CloseEntriesAndNrOf
 struct Cell
 {
     std::vector<Entry>* localEntries;
-    std::vector<std::vector<uint32_t>*>* offsets;
+    std::vector<std::vector<int32_t>*>* offsets;
 };
 
 /// <summary>
@@ -167,9 +167,11 @@ private:
     // The size of the table needs to be (2^n x 2^n) for simpler realization of modulo function.
     const uint32_t sideLength;
 
+    float invCellSize;
+
     // Used for realisation of modulo function
-    const int32_t xMask;
-    const int32_t yMask;
+    const uint32_t xMask;
+    const uint32_t yMask;
 
     // Sorted list of entries to return, from GetCloseEntities().
     std::vector<EntryWithDistance>* closeEntries;
@@ -188,7 +190,7 @@ private:
     uint32_t numberOfOffsets;
 
     // Stores all the offsets that the cells point to.
-    std::vector<std::vector<uint32_t>*>* globalOffsets;
+    std::vector<std::vector<int32_t>*>* globalOffsets;
 
     // Inserts a entry from *allEntries into the hash table.
     Entered InsertInTable(Entry* entry, uint32_t cellNr);

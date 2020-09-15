@@ -36,6 +36,8 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
     // Temporary value that will probably be determined at runtime later.
     constexpr uint32_t reservedLocalEntries = 16;
 
+    invCellSize = 1 / (float)sideLength;
+
     // table represents a two dimensional square.
     table = new vector<Cell>();
     table->resize(sideLength * sideLength);
@@ -45,9 +47,9 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
         table->at(i).localEntries = new vector<Entry>();
         table->at(i).localEntries->reserve(reservedLocalEntries);
 
-        table->at(i).offsets = new vector<vector<uint32_t>*>();
+        table->at(i).offsets = new vector<vector<int32_t>*>();
 
-        globalOffsets = new vector<vector<uint32_t>*>();
+        globalOffsets = new vector<vector<int32_t>*>();
         globalOffsets->reserve(100);
     }
     
@@ -192,9 +194,11 @@ uint32_t SpatialHash::CalculateCellNr(Position pos)
 /// <returns>The cell number associated with the input position.</returns>
 uint32_t SpatialHash::CalculateCellNr(float x, float y)
 {
+    float tx = x * invCellSize;
+    float ty = y * invCellSize;
     // Calculate where in the theoretical 2d hash table the entry would end up.
-    uint32_t xCellNr = static_cast<uint32_t>(x) & xMask;
-    uint32_t yCellNr = static_cast<uint32_t>(y) & yMask;
+    uint32_t xCellNr = static_cast<uint32_t>(tx) & xMask;
+    uint32_t yCellNr = static_cast<uint32_t>(ty) & yMask;
 
     // Convert this to the actual cell in the vector.
     return xCellNr + yCellNr * sideLength;
@@ -274,7 +278,7 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
     /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
      * a small number of elements in this list so using Insert Sort probably makes sense.
      * This should be tested sometime though. */
-    for (int32_t h = from; h < static_cast<int>(closeEntries->size()); h++)
+    /*for (int32_t h = from; h < static_cast<int>(closeEntries->size()); h++)
     {
         EntryWithDistance tempEntry = closeEntries->at(h);
 
@@ -286,10 +290,10 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
         }
 
         closeEntries->at(k + 1) = tempEntry;
-    }
+    }*/
 
     /* Selection sort*/
-    /*for (int32_t i = from; i < closeEntries->size() - 1; i++)
+    for (int32_t i = from; i < closeEntries->size() - 1; i++)
     {
         int jMin = i;
 
@@ -305,7 +309,7 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
         {
             swap(closeEntries->at(i), closeEntries->at(jMin));
         }
-    }*/
+    }
 }
 
 CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* pos, float d, int32_t maxEntities)
@@ -355,12 +359,12 @@ void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
 {
     uint32_t i = x + y * sideLength;
 
-    vector<uint32_t>* cellOffsets;
+    vector<int32_t>* cellOffsets;
 
     // Loop through all the steps.
     for (uint32_t k = 0; k < numberOfSteps; k++)
     {
-        cellOffsets = new vector<uint32_t>();
+        cellOffsets = new vector<int32_t>();
 
         // Loop through all the offsets of the current step.
         for (uint32_t j = 0; j < xOffsetsToCalculate[k].size(); j++)
@@ -368,8 +372,8 @@ void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
             // Offsets are calculated from the unlocalized offsets.
             int32_t tx = x + xOffsetsToCalculate[k][j];
             int32_t ty = y + yOffsetsToCalculate[k][j];
-            tx = ProperMod(tx, sideLength-1);
-            ty = ProperMod(ty, sideLength-1);
+            tx = ProperMod(tx, sideLength);
+            ty = ProperMod(ty, sideLength);
 
             cellOffsets->push_back((tx + ty * sideLength) - i);
         }
