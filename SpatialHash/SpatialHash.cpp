@@ -9,7 +9,7 @@ extern "C" __declspec(dllexport) void Init(uint32_t nrEntries, Entry * globalEnt
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) CloseIdsAndNrOf GetEntries(int32_t nrOfPositions, Position* position, float d, int32_t maxEntities, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Update(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) void Remove(uint32_t nrOfEntriesToRemove, uint32_t * entryIndices, SpatialHash * spatialHash);
 
 /// <summary>
 /// Proper modulo function.
@@ -119,7 +119,7 @@ void SpatialHash::UpdateTable()
 /// Checks if inputed entry have moved to a new cell. If it has
 /// moved, it is reinserted and the old one is removed.
 /// </summary>
-/// <param name="entry">Entry will be put into correct cell.</param>
+/// <param name="entered">Entry will be put into correct cell.</param>
 void SpatialHash::UpdateEntered(Entered* entered)
 {
     uint32_t currenthashValue = CalculateCellNr(entered->entry.position);
@@ -138,10 +138,15 @@ void SpatialHash::RemoveEntryFromTable(uint32_t entryIndex)
 {
 }
 
+void RemoveEntryFromTableBulk(uint32_t nrOfEntriesToRemove, uint32_t* entryIndices)
+{
+
+}
+
 /// <summary>
 /// Removes input entry from hash table.
 /// </summary>
-/// <param name="entry">Entry to remove from hash table.</param>
+/// <param name="entered">Entry to remove from its current cell.</param>
 void SpatialHash::RemoveEntryFromCell(Entered* entered)
 {
     // If the entry is at the end of the vector it can be removed straight away.
@@ -152,7 +157,6 @@ void SpatialHash::RemoveEntryFromCell(Entered* entered)
     else
     {
         // If the entry isn't at the end of the vector, it's overwritten with the entry that is.
-        //table->at(entered->hashValue).localEntries->back().nrInCell = entered->nrInCell;
         allEntered->at(table->at(entered->hashValue).localEntries->back().id).nrInCell = entered->nrInCell;
         table->at(entered->hashValue).localEntries->at(entered->nrInCell) = table->at(entered->hashValue).localEntries->back();
         table->at(entered->hashValue).localEntries->pop_back();
@@ -163,6 +167,7 @@ void SpatialHash::RemoveEntryFromCell(Entered* entered)
 /// Inserts an entry into the spatial hash table.
 /// </summary>
 /// <param name="entry">Entry to insert.</param>
+/// <returns>The entry with the information of where in the hash table it is.</returns>
 Entered SpatialHash::InsertInTable(Entry* entry)
 {
     uint32_t cellNr = CalculateCellNr(entry->position);
@@ -170,7 +175,6 @@ Entered SpatialHash::InsertInTable(Entry* entry)
 }
 Entered SpatialHash::InsertInTable(Entry* entry, uint32_t cellNr)
 {
-    //Entered tempEntered = Entered(*entry, this->table->at(cellNr).localEntries->size(), cellNr);
     this->table->at(cellNr).localEntries->push_back(*entry);
 
     return Entered(*entry, this->table->at(cellNr).localEntries->size()-1, cellNr);
@@ -194,15 +198,17 @@ uint32_t SpatialHash::CalculateCellNr(Position pos)
 /// <returns>The cell number associated with the input position.</returns>
 uint32_t SpatialHash::CalculateCellNr(float x, float y)
 {
+    // Calculate where in the theoretical 2d hash table the entry would end up.
     float tx = x * invCellSize;
     float ty = y * invCellSize;
-    // Calculate where in the theoretical 2d hash table the entry would end up.
+    
     uint32_t xCellNr = static_cast<uint32_t>(tx) & xMask;
     uint32_t yCellNr = static_cast<uint32_t>(ty) & yMask;
 
     // Convert this to the actual cell in the vector.
     return xCellNr + yCellNr * sideLength;
 }
+
 /// <summary>
 /// Gets all entities in the spatial hash that are within a certain distance of a position.
 /// </summary>
@@ -246,6 +252,12 @@ void SpatialHash::GetCloseEntries(Position pos, float d, int32_t maxEntities)
     return;
 }
 
+/// <summary>
+/// Gets all the entries in a cell of the hash table that are within a distance, d, of a position, pos.
+/// </summary>
+/// <param name="cellIndex">Cell to look for close entries in.</param>
+/// <param name="pos">Position to look for close entries around.</param>
+/// <param name="d">The distance inside of which entries are considered close.</param>
 inline void SpatialHash::GetCloseEntriesInCell(uint32_t cellIndex, Position pos, float d)
 {
     float tempDistance = 0;
@@ -256,7 +268,7 @@ inline void SpatialHash::GetCloseEntriesInCell(uint32_t cellIndex, Position pos,
     {
         tempDistance = Distance(table->at(cellIndex).localEntries->at(m).position, pos);
 
-        /* Imporant because entites sharing cells can be very far from each other because
+        /* Imporant because entites sharing cells can still be very far from each other because
          * of the hashing/modulo on insertion. */
         if (tempDistance < d)
         {
@@ -291,27 +303,16 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
 
         closeEntries->at(k + 1) = tempEntry;
     }
-
-    /* Selection sort*/
-    /*for (int32_t i = from; i < closeEntries->size() - 1; i++)
-    {
-        int jMin = i;
-
-        for (int32_t j = i + 1; j < closeEntries->size(); j++)
-        {
-            if (closeEntries->at(j).distance < closeEntries->at(jMin).distance)
-            {
-                jMin = j;
-            }
-        }
-
-        if (jMin != i)
-        {
-            swap(closeEntries->at(i), closeEntries->at(jMin));
-        }
-    }*/
 }
 
+/// <summary>
+/// For more efficent interoping GetCloseEntries requests are bunched together.
+/// </summary>
+/// <param name="nrSearches">How many GetCloseEntries requests that are bunched together.</param>
+/// <param name="pos">An array of postions, nrSearches long.</param>
+/// <param name="d">Distance in which entries are considered close.</param>
+/// <param name="maxEntities">Max number of entries per GetCloseEntries to return.</param>
+/// <returns>The entries that are close to the positions and how many of them there are.</returns>
 CloseIdsAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* pos, float d, int32_t maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
@@ -336,8 +337,8 @@ CloseIdsAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* p
 }
 
 /// <summary>
-/// Currently each cell gets its own offset calculated. Since most cells share many offsets,
-/// it's a bit of a vaste memory wise. On the other hand it might be better performance wise from a time perspective.
+/// Calculates all the different localized offsets from unlocalized offsets read from a file.
+/// These are then stored in globalOffsets.
 /// </summary>
 void SpatialHash::InitializeOffsets()
 {
@@ -355,6 +356,12 @@ void SpatialHash::InitializeOffsets()
     }
 }
 
+/// <summary>
+/// Calculates all the different offsets of a cell and points them to their
+/// representation in globalOffsets or if the isn't in there puts it there.
+/// </summary>
+/// <param name="x"></param>
+/// <param name="y"></param>
 void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
 {
     uint32_t i = x + y * sideLength;
@@ -400,6 +407,9 @@ void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
     }
 }
 
+/// <summary>
+/// The unlocalized offsets are calculated in another program and saved as a file since they don't need to be calculated more than once.
+/// </summary>
 void SpatialHash::ReadOffsetsFromFile()
 {
     // The offsets are calculated before runtime and saved in a file that is loaded here.
@@ -443,6 +453,12 @@ void SpatialHash::ReadOffsetsFromFile()
 }
 
 /*-------------INTEROPS------------*/
+
+/// <summary>
+/// Instanciates a SpatialHash of a certain size.
+/// </summary>
+/// <param name="tableSize">The length and height of the table will be 2^tableSize.</param>
+/// <returns>A pointer to the instanciated SpatialHash.</returns>
 void* Start(uint32_t tableSize)
 {
     SpatialHash* spatialHash = new SpatialHash(tableSize);
@@ -450,6 +466,13 @@ void* Start(uint32_t tableSize)
     return spatialHash;
 }
 
+/// <summary>
+/// Loads the SpatialHash with the start number of entries via an array of entries.
+/// Also initilizes the offsets of the Spatial Hash.
+/// </summary>
+/// <param name="nrEntries">Number of entries in the globalEntries array.</param>
+/// <param name="globalEntries">An array of Entry structs.</param>
+/// <param name="spatialHash">Which SpatialHash to intilize.</param>
 void Init(uint32_t nrEntries, Entry* globalEntries, SpatialHash* spatialHash)
 {
     spatialHash->Initilize(globalEntries, nrEntries);
@@ -458,6 +481,7 @@ void Init(uint32_t nrEntries, Entry* globalEntries, SpatialHash* spatialHash)
 /// <summary>
 /// Have to be called or may the Theoretical Gods have mercy on my soul.
 /// </summary>
+/// <param name="spatialHash">Which Spatial Hash to stop.</param>
 /// <returns>0 if it ran to completion.</returns>
 uint32_t Stop(SpatialHash* spatialHash)
 {
@@ -467,13 +491,14 @@ uint32_t Stop(SpatialHash* spatialHash)
 }
 
 /// <summary>
-/// Retrives entries close to input position from the spatialHash.
+/// Retrives entries close to input positions from the Spatial Hash.
 /// </summary>
-/// <param name="position">Position to check for close entries.</param>
+/// <param name="nrPositions">Number of positions to search.</param>
+/// <param name="position">Positions to check for close entries, An array of size nrPositions.</param>
 /// <param name="d">How far away from the position entries can be to be close.</param>
-/// <param name="maxEntities">Maximum number of entries to return.</param>
-/// <param name="spatialHash">Which spatialHash to look in.</param>
-/// <returns>A ordered list of entries close to input position.</returns>
+/// <param name="maxEntities">Maximum number of entries to return per search.</param>
+/// <param name="spatialHash">Which Spatial Hash to look in.</param>
+/// <returns>A ordered list of entries close to input position and the number of entries per search.</returns>
 CloseIdsAndNrOf GetEntries(int32_t  nrPositions, Position* position, float d, int32_t  maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntriesBulk(nrPositions, position, d, maxEntities);
@@ -482,14 +507,13 @@ CloseIdsAndNrOf GetEntries(int32_t  nrPositions, Position* position, float d, in
 /// <summary>
 /// Checks if entries of input spatial hash has changed and updates itself accordingly.
 /// </summary>
-/// <param name="numberOfEntries">Number of entries to check if they need to be updated.</param>
-/// <param name="spatialHash">The spatial hash to update.</param>
+/// <param name="spatialHash">The Spatial Hash to update.</param>
 void Update(SpatialHash* spatialHash)
 {
     spatialHash->UpdateTable();
 }
 
-void Remove(uint32_t entryIndex, SpatialHash* spatialHash)
+void Remove(uint32_t nrOfEntriesToRemove, uint32_t* entryIndices, SpatialHash* spatialHash)
 {
-    spatialHash->RemoveEntryFromTable(entryIndex);
+    spatialHash->RemoveEntryFromTableBulk(nrOfEntriesToRemove, entryIndices);
 }
