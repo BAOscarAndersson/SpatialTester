@@ -7,7 +7,7 @@ using namespace std;
 extern "C" __declspec(dllexport) void* Start(uint32_t tableSize);
 extern "C" __declspec(dllexport) void Init(uint32_t nrEntries, Entry * globalEntries, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) uint32_t Stop(SpatialHash * spatialHash);
-extern "C" __declspec(dllexport) CloseEntriesAndNrOf GetEntries(int32_t nrOfPositions, Position* position, float d, int32_t maxEntities, SpatialHash * spatialHash);
+extern "C" __declspec(dllexport) CloseIdsAndNrOf GetEntries(int32_t nrOfPositions, Position* position, float d, int32_t maxEntities, SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Update(SpatialHash * spatialHash);
 extern "C" __declspec(dllexport) void Remove(uint32_t entryIndex, SpatialHash * spatialHash);
 
@@ -53,7 +53,7 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
         globalOffsets->reserve(100);
     }
     
-    closeEntries = new vector<EntryWithDistance>();
+    closeEntries = new vector<IdWithDistance>();
     nrOfEntries = new vector<uint32_t>();
     numberOfOffsets = 0;
     numberOfSteps = 0;
@@ -250,7 +250,7 @@ inline void SpatialHash::GetCloseEntriesInCell(uint32_t cellIndex, Position pos,
 {
     float tempDistance = 0;
     Entry tempEntry;
-    EntryWithDistance tempEntryWithDistance;
+    IdWithDistance tempIdWithDistance;
 
     for (size_t m = 0; m < table->at(cellIndex).localEntries->size(); m++)
     {
@@ -261,9 +261,9 @@ inline void SpatialHash::GetCloseEntriesInCell(uint32_t cellIndex, Position pos,
         if (tempDistance < d)
         {
             tempEntry = table->at(cellIndex).localEntries->at(m);
-            tempEntryWithDistance = EntryWithDistance(tempEntry, tempDistance);
+            tempIdWithDistance = IdWithDistance(tempEntry.id, tempDistance);
 
-            closeEntries->push_back(tempEntryWithDistance);
+            closeEntries->push_back(tempIdWithDistance);
         }
     }
 }
@@ -278,9 +278,9 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
     /* Insert-sort the vector. The whole point of the Spatial Hash is that there should only be
      * a small number of elements in this list so using Insert Sort probably makes sense.
      * This should be tested sometime though. */
-    /*for (int32_t h = from; h < static_cast<int>(closeEntries->size()); h++)
+    for (int32_t h = from; h < static_cast<int>(closeEntries->size()); h++)
     {
-        EntryWithDistance tempEntry = closeEntries->at(h);
+        IdWithDistance tempEntry = closeEntries->at(h);
 
         int32_t k = h - 1;
         while (k >= from && closeEntries->at(k).distance > tempEntry.distance)
@@ -290,10 +290,10 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
         }
 
         closeEntries->at(k + 1) = tempEntry;
-    }*/
+    }
 
     /* Selection sort*/
-    for (int32_t i = from; i < closeEntries->size() - 1; i++)
+    /*for (int32_t i = from; i < closeEntries->size() - 1; i++)
     {
         int jMin = i;
 
@@ -309,10 +309,10 @@ inline void SpatialHash::SortCloseEntries(int32_t from)
         {
             swap(closeEntries->at(i), closeEntries->at(jMin));
         }
-    }
+    }*/
 }
 
-CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* pos, float d, int32_t maxEntities)
+CloseIdsAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Position* pos, float d, int32_t maxEntities)
 {
     // Since new entries to return is to be calculated we need to get rid of the old ones.
     closeEntries->clear();
@@ -332,7 +332,7 @@ CloseEntriesAndNrOf SpatialHash::GetCloseEntriesBulk(int32_t nrSearches, Positio
         nrOfEntries->push_back(0);
     }
 
-    return CloseEntriesAndNrOf{ nrOfEntries->data(), closeEntries->data() };
+    return CloseIdsAndNrOf{ nrOfEntries->data(), closeEntries->data() };
 }
 
 /// <summary>
@@ -474,7 +474,7 @@ uint32_t Stop(SpatialHash* spatialHash)
 /// <param name="maxEntities">Maximum number of entries to return.</param>
 /// <param name="spatialHash">Which spatialHash to look in.</param>
 /// <returns>A ordered list of entries close to input position.</returns>
-CloseEntriesAndNrOf GetEntries(int32_t  nrPositions, Position* position, float d, int32_t  maxEntities, SpatialHash* spatialHash)
+CloseIdsAndNrOf GetEntries(int32_t  nrPositions, Position* position, float d, int32_t  maxEntities, SpatialHash* spatialHash)
 {
     return spatialHash->GetCloseEntriesBulk(nrPositions, position, d, maxEntities);
 }

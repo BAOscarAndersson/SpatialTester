@@ -23,7 +23,8 @@ struct Position
 };
 
 /// <summary>
-/// Every thing in the Spatial Hash, every Entry, has, besides a place in 2d space, also an unique id.
+/// Every thing in the Spatial Hash, every Entry, has, besides a place in 2d space, also a id.
+/// The id of an Entry is it's place in the allEntries array.
 /// </summary>
 struct Entry
 {
@@ -38,7 +39,7 @@ struct Entry
 /// <summary>
 /// Each Entry needs to know it's place in the cell of the Spatial Hash and what cell it's in, 
 /// for efficient removal.
-/// So when a Entry is inserted to the Spatial Hash it's number in it's cell and it's hash value is saved.
+/// So when a Entry is inserted in the Spatial Hash its number in the cell and hash value are saved.
 /// </summary>
 struct Entered
 {
@@ -66,15 +67,19 @@ struct EntryWithDistance
     ~EntryWithDistance() {}
 };
 
-struct EntryIdWithDistance
+/// <summary>
+/// For more efficent interop the position is discarded from the return information. This means
+/// that the calling program needs to store the positions if the need to do so.
+/// </summary>
+struct IdWithDistance
 {
     uint32_t id;
     float distance;
 
-    EntryIdWithDistance(uint32_t inId, float inDistance) : id(inId), distance(inDistance) {}
-    EntryIdWithDistance() : id(0), distance(0.0f) {}
+    IdWithDistance(uint32_t inId, float inDistance) : id(inId), distance(inDistance) {}
+    IdWithDistance() : id(0), distance(0.0f) {}
 
-    ~EntryIdWithDistance() {}
+    ~IdWithDistance() {}
 };
 
 /// <summary>
@@ -85,6 +90,12 @@ struct CloseEntriesAndNrOf
 {
     uint32_t* nrOfEntries;
     EntryWithDistance* allCloseEntries;
+};
+
+struct CloseIdsAndNrOf
+{
+    uint32_t* nrOfEntries;
+    IdWithDistance* allCloseEntries;
 };
 
 /// <summary>
@@ -139,7 +150,7 @@ public:
     /// <returns>Pointer to a list of entrise sorted by distance from input position.</returns>
     void GetCloseEntries(Position position, float d, int32_t maxEntities);
 
-    CloseEntriesAndNrOf GetCloseEntriesBulk(int32_t nrSearches, Position* positions, float d, int32_t maxEntities);
+    CloseIdsAndNrOf GetCloseEntriesBulk(int32_t nrSearches, Position* positions, float d, int32_t maxEntities);
 
     /// <summary>
     /// Creates a square Spatial Hash table with length "size".
@@ -174,7 +185,7 @@ private:
     const uint32_t yMask;
 
     // Sorted list of entries to return, from GetCloseEntities().
-    std::vector<EntryWithDistance>* closeEntries;
+    std::vector<IdWithDistance>* closeEntries;
 
     // Number of elements added to closeEntries for each GetCloseEntities().
     std::vector<uint32_t>* nrOfEntries;
