@@ -112,7 +112,7 @@ struct Cell
 /// <summary>
 /// The Spatial Hash stores objects from an float sized space in a relatively small hash table
 /// that preserves the locality of objects. In the current implementation that is with a modulo function.
-/// This function is realized with a bitwise AND operation for speed concerns and requires that
+/// This function is realized with a bitwise AND operation because of speed concerns and requires that
 /// the hash table is of size 2^n for both dimensions.
 /// </summary>
 class SpatialHash
@@ -120,7 +120,7 @@ class SpatialHash
 public:
     /// <summary>
     /// After the class have been constructed this is called and will go through all the Entered's in
-    /// *allEntries and insert them into the hash table.
+    /// *allEntries and insert them into the hash table. It will also intilize the offsets.
     /// </summary>
     /// <param name="allEntries">Everything that is in the hash map should be in this array</param>
     /// <param name="numberOfEntries>The number of Entry:s in allEntries.</param>
@@ -129,27 +129,19 @@ public:
     /// <summary>
     /// Checks all the Entered's in *allEntries to see if they have moved to a new cell. If they have
     /// moved, they are reinserted and the old one is removed.
-    /// NOTE: Make sure you are inputting the correct number of Entry:s.
     /// </summary>
-    /// <param name="numberOfEntries>The number of Entry:s in allEntries.</param>
     void UpdateTable();
 
-    /// <summary>
-    /// Removes a entry from the hash table. NOTE: It does not remove them from *allEntries. That part
-    /// is on whoever controls it.
-    /// </summary>
-    /// <param name="entry">Entry to remove from hash table.</param>
-    void RemoveEntryFromTable(uint32_t entryIndex);
+    void RemoveEntryFromTableBulk(uint32_t nrOfEntriesToRemove, uint32_t* entryIndices); // Not implemented yet.
 
     /// <summary>
-    /// Gets a number entites that are within a distance of a position.
+    /// Gets a number entites that are within a distance of a number of positions.
     /// </summary>
-    /// <param name="pos">Where to look for entites.</param>
+    /// <param name="nrSearches">Number of searches.</param>
+    /// <param name="positions">Where to look for entites.</param>
     /// <param name="d">Radius of the search area.</param>
     /// <param name="maxEntities">No more than this number of entires will be returned.</param>
-    /// <returns>Pointer to a list of entrise sorted by distance from input position.</returns>
-    void GetCloseEntries(Position position, float d, int32_t maxEntities);
-
+    /// <returns>A ordered list of entries sorted by distance from input positions.</returns>
     CloseIdsAndNrOf GetCloseEntriesBulk(int32_t nrSearches, Position* positions, float d, int32_t maxEntities);
 
     /// <summary>
@@ -171,13 +163,16 @@ private:
      * table more cash friendly. */
     Entry* allEntries;
 
-   std::vector<Entered>* allEntered;
+    // Stores information about where in the hash map the entries are.
+    std::vector<Entered>* allEntered;
 
+    // Needed to keep track of the size of the number of elements in the allEntries array.
     uint32_t numberOfAllEntries;
 
     // The size of the table needs to be (2^n x 2^n) for simpler realization of modulo function.
     const uint32_t sideLength;
 
+    // Precalculated to save operations in the hash function.
     float invCellSize;
 
     // Used for realisation of modulo function
@@ -190,15 +185,9 @@ private:
     // Number of elements added to closeEntries for each GetCloseEntities().
     std::vector<uint32_t>* nrOfEntries;
 
-    // GetCloseEntries will loop through this number of steps.
-    uint32_t numberOfSteps;
-
     // Contains the unlocalized offsets. That is offsets that aren't adapted to any certain cell.
     std::vector<std::vector<int32_t>> xOffsetsToCalculate{};
     std::vector<std::vector<int32_t>> yOffsetsToCalculate{};
-
-    // Total number of offsets in stepSizes, the offsets read from a file.
-    uint32_t numberOfOffsets;
 
     // Stores all the offsets that the cells point to.
     std::vector<std::vector<int32_t>*>* globalOffsets;
@@ -212,7 +201,18 @@ private:
     // Checks if input entity has moved cell and if so inserts it into the new and removes it from the old.
     void UpdateEntered(Entered* entered);
 
+    void RemoveEntryFromTable(uint32_t entryIndex); // Not implemented yet.
+
+    void SetNumberOfEntries(uint32_t numberOfEntries); // Not implemented yet.
+
+    // Gets entries from the Spatial Hash.
+    void GetCloseEntries(Position position, float d, int32_t maxEntities);
+
+    // Gets entries from a cell, used by GetCloseEntries().
     void GetCloseEntriesInCell(uint32_t cellIndex, Position pos, float d);
+
+    // Sort closeEntries by distance. Used in GetCloseEntries().
+    void SortCloseEntries(int32_t from);
 
     // Overloaded hash function.
     uint32_t CalculateCellNr(const Position pos);
@@ -220,13 +220,12 @@ private:
     // Hash function.
     uint32_t CalculateCellNr(const float x, const float y);
 
-    // Called when constructing the class. Points all cells to their offsets.
-    // TODO: Smarter way to generate the offsets. Put the initialization outside constructor?
+    // Points all cells to their offsets.
     void InitializeOffsets();
 
+    // Points the offsets in a cell to their representation in globalOffsets. Used in InitializeOffsets().
     void InitializeOffsetsInCell(uint32_t x, uint32_t y);
-    void ReadOffsetsFromFile();
 
-    // Used in GetCloseEntries
-    void SortCloseEntries(int32_t from);
+    // Loads the unlocalized offsets from a file. Used in InitializeOffsets(). 
+    void ReadOffsetsFromFile();
 };

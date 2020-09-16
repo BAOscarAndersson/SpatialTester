@@ -55,8 +55,6 @@ SpatialHash::SpatialHash(size_t sidePower) : allEntries(allEntries), sideLength(
     
     closeEntries = new vector<IdWithDistance>();
     nrOfEntries = new vector<uint32_t>();
-    numberOfOffsets = 0;
-    numberOfSteps = 0;
 
     allEntered = new vector<Entered>();
     numberOfAllEntries = 0;
@@ -138,9 +136,12 @@ void SpatialHash::RemoveEntryFromTable(uint32_t entryIndex)
 {
 }
 
-void RemoveEntryFromTableBulk(uint32_t nrOfEntriesToRemove, uint32_t* entryIndices)
+void SpatialHash::RemoveEntryFromTableBulk(uint32_t nrOfEntriesToRemove, uint32_t* entryIndices)
 {
-
+    for (uint32_t i = 0; i < nrOfEntriesToRemove; i++)
+    {
+        RemoveEntryFromTable(entryIndices[i]);
+    }
 }
 
 /// <summary>
@@ -344,9 +345,6 @@ void SpatialHash::InitializeOffsets()
 {
     ReadOffsetsFromFile();
 
-    for (uint32_t j = 0; j < xOffsetsToCalculate.size(); j++)
-        numberOfOffsets += xOffsetsToCalculate[j].size();
-
     for (int32_t y = 0; y != sideLength; y++)
     {
         for (int32_t x = 0; x != sideLength; x++)
@@ -369,7 +367,7 @@ void SpatialHash::InitializeOffsetsInCell(uint32_t x, uint32_t y)
     vector<int32_t>* cellOffsets;
 
     // Loop through all the steps.
-    for (uint32_t k = 0; k < numberOfSteps; k++)
+    for (uint32_t k = 0; k < xOffsetsToCalculate.size(); k++)
     {
         cellOffsets = new vector<int32_t>();
 
@@ -418,7 +416,7 @@ void SpatialHash::ReadOffsetsFromFile()
 
     if (offsetsFile.is_open())
     {
-        numberOfSteps = 0;
+        uint32_t numberOfSteps = 0;
 
         vector<int32_t> xOffsets;
         vector<int32_t> yOffsets;
